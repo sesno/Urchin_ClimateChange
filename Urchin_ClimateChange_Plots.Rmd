@@ -1,0 +1,445 @@
+---
+title: "Plots for growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
+author: "Emily Sesno"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls(all=TRUE))
+setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
+results <- read.csv("Urchin_ClimateChange_Data.csv", header=T, na="NA")
+
+library("tidyverse")
+library("lme4") #linear mixed modeling
+library("lmtest") #linear mixed modeling
+library("lmerTest") #calculate p-values in models
+library("car") #levenes tests
+library("emmeans") #post-hoc tests
+library("lsmeans") #post-hoc tests
+library("plotrix") #calculate std.error
+library("dplyr") 
+
+
+```
+
+## Methods
+
+### Statistical Analyses
+
+Residuals were checked for normality and confirmed with the Shapiro-Wilk test and homogeniety of variance was confirmed using Levene’s test. Temperature and pH treatment condition data were not normal, so were analyzed using a Kruskal-Wallis test. Effect of temperature and pH treatments on growth (%), calcification ratio, and relative spine length (% of TD) were analyzed using linear mixed effects models in the lme4 package (Bates, et al. 2015) in R Statistical Programming (R Core Team, 2018). Temperature and pH were included as fixed factors with individual urchin included as a random effect. Significance of effects was determined using a type II analysis of variance (ANOVA) producing a deviance table with Wald chi-square tests in the car package (Fox et al. 2019). Alpha was set to 0.05 for all analyses. Analysis of dropped spines was conducted using a Kruskal-Wallis test (Alexis Dinno, 2017) as the normality assumption was violated. Data visualization and analysis was conducted using the programs JMP® Pro 13.1.0 (SAS Institute Inc., 2019) and R Version 1.2.1335 (R Core Team, 2018).
+
+
+
+## Results
+
+### Treatment Conditions
+	
+The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24) (Fig. 3.1a). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24) (Fig. 3.1b). 
+
+
+```{r Environmental Plots: Temperature, echo = FALSE}
+
+results %>% 
+  select("Day", "Temperature", "Temp") %>%
+  drop_na(Temp) %>%
+  group_by(Day, Temperature) %>%
+  mutate(meanT = mean(Temp)) %>%
+  group_by(Temperature) %>% 
+  mutate(se = std.error(Temp)) %>%
+  
+  
+ggplot(aes(Day, meanT, color = Temperature, shape = Temperature)) +
+    geom_point(size = 2.5) +
+    geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
+    geom_line() +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Ambient Temp", "High Temp")) +
+    scale_color_manual(name = NULL,
+                       values = c("gray40", "firebrick3"),
+                       labels = c("Ambient Temp", "High Temp")) +
+    theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) + 
+    annotate("text", x = 127, y = 29.5, label = "(a)")
+
+#ggsave("TempOverTime.png", 
+       #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+       #width = 7, height = 5)
+
+```
+
+```{r Environmental Plots: pH, echo = FALSE}
+
+results %>% 
+  select("Day","pH", "pHspec") %>%
+  drop_na(pHspec) %>%
+  group_by(Day, pH) %>%
+  mutate(meanpH = mean(pHspec)) %>%
+  group_by(pH, meanpH) %>% 
+  mutate(se = std.error(pHspec)) %>%
+
+ ggplot(aes(Day, meanpH, color = pH, shape = pH)) +
+    geom_point(size = 2.5) +
+    geom_errorbar(aes(ymin = meanpH-se, ymax = meanpH+se)) +
+    geom_line() +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Low pH", "Ambient pH"),
+                         guide = guide_legend(reverse = TRUE)) +
+    scale_color_manual(name = NULL,
+                       values = c("skyblue3", "gray40"),
+                       labels = c("Low pH", "Ambient pH"),
+                       guide = guide_legend(reverse = TRUE)) +
+    theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) +
+    annotate("text", x = 127, y = 8.01, label = "(b)")
+
+#ggsave("pHOverTime.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+
+
+```
+
+**Figure 3.1.** Temperature (a) and pH (b) conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen. Days prior to 0 indicate the acclimation and conditioning period.
+
+
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Day", "Treatment","Temperature","pH","Growth") %>%
+  drop_na(Growth) %>% 
+  group_by(Day, Treatment) %>%
+  mutate(se = (std.error(Growth))*100) %>%
+  mutate(meanPct = (mean(Growth)*100)) %>% 
+
+  
+  ggplot(aes(Day, meanPct, shape = Treatment, color = Treatment)) +
+    geom_point(size = 2.5) +
+    geom_line() +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Growth (%)", breaks = seq(0,400, by = 25)) +
+    geom_errorbar(aes(ymin = meanPct-se, ymax = meanPct+se, width = 1.5)) +
+    theme_bw() + 
+    scale_shape_discrete(name = NULL,
+                         labels = c("Amb T, Amb pH", "Amb T, Low pH", "High T, Amb pH", "High T, Low pH")) +
+    scale_colour_manual(name = NULL,
+                        values = c("gray40", "skyblue3", "firebrick3","mediumpurple3"),
+                        labels = c("Amb T, Amb pH", "Amb T, Low pH", "High T, Amb pH", "High T, Low pH")) +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.01, .99), 
+          legend.justification = c("left", "top"),
+          legend.background = element_blank())
+
+#ggsave("TreatmentGrowth.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+**Figure.** Growth (%) in treatment conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen.
+
+### Effect on Growth
+
+Test diameters were not significantly different among all urchins upon initial collection (mean = 7.54  0.29 mm; n=24; F3,20=0.851; p=0.4825) or after subsequent ramp-up of conditions (mean = 16.12  0.67 mm; n=24; F3,20=1.0907; p=0.3759). Increased temperatures significantly influenced growth (p = 0.042) while pH did not (p=0.611) (Fig. 3.2). Urchins grown in increased temperatures were 12 % larger than those in ambient conditions, regardless of pH. There was no interaction between temperature and pH (p=0.482) (Fig. 3.2).
+
+
+```{r Temperature Growth, echo = FALSE}
+
+results %>% 
+  select("Day","Temperature","Growth") %>%
+  drop_na(Growth) %>% 
+  group_by(Day, Temperature) %>%
+  mutate(se = (std.error(Growth))*100) %>%
+  mutate(meanPct = (mean(Growth)*100)) %>% 
+
+  
+  ggplot(aes(Day, meanPct, shape = Temperature, color = Temperature)) +
+    geom_point(size = 2.5) +
+    geom_line() +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Growth (%)", breaks = seq(0,400, by = 25)) +
+    geom_errorbar(aes(ymin = meanPct-se, ymax = meanPct+se, width = 1.5)) +
+    theme_bw() +
+    scale_colour_manual(name = NULL, 
+                        values = c("gray40", "firebrick3"), 
+                        labels = c("Ambient Temperture", "High Temperature")) +
+    scale_shape_discrete(name = NULL, 
+                       labels = c("Ambient Temperture", "High Temperature")) +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.03, 0.93), 
+          legend.justification = c("left", "top"),
+          legend.background = element_blank()) + 
+    annotate("text", x = 0, y = 375, label = "(a)") +
+    annotate("text", x = 130, y = 359, label = "*", size = 7)
+
+#ggsave("TempGrowth.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+```{r pH Growth, echo = FALSE}
+
+results %>% 
+  select("Day","pH","Growth") %>%
+  drop_na(Growth) %>% 
+  group_by(Day, pH) %>%
+  mutate(se = (std.error(Growth))*100) %>%
+  mutate(meanPct = (mean(Growth)*100)) %>% 
+
+  ggplot(aes(Day, meanPct, shape = pH, color = pH)) +
+    geom_point(size = 2.5) +
+    geom_line() +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Growth (%)", breaks = seq(0,400, by = 25)) +
+    geom_errorbar(aes(ymin = meanPct-se, ymax = meanPct+se, width = 1.5)) +
+    theme_bw() +
+    scale_colour_manual(name = NULL, 
+                        values = c("skyblue3", "gray40"), 
+                        labels = c("Low pH", "Ambient pH"),
+                         guide = guide_legend(reverse = TRUE)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Low pH", "Ambient pH"),
+                         guide = guide_legend(reverse = TRUE)) +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.03, .93), 
+          legend.justification = c("left", "top"),
+          legend.background = element_blank()) + 
+    annotate("text", x = 0, y = 370, label = "(b)")
+
+#ggsave("pHGrowth.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+    
+
+```
+
+**Figure 3.2.** Effect of (a) temperature and (b) pH on growth (%) of Tripneustes gratilla test diameters over the 126-day experiment. Temperature and pH data presented here are pooled for ease of interpretation as there were no significant interactive effects. Data are mean ± standard error (s.e.), n= 11-12, * indicates significance. 
+
+### Effect on Calcification
+
+There was no significant effect of temperature (p=0.387), pH (p=0.437), or the interaction of both (p=0.091) on the calcification ratio of cross-sections at the tips of T. gratilla spines. At the base of the spines, pH contributed to a significant reduction of the calcification ratio (p=0.002) while temperature did not (p=0.164). Calcification ratios were 16% lower in acidified conditions, regardless of temperature. There was no interaction between temperature and pH on the calcification ratio at the base of the spines (p=0.536) (Fig. 3.3). 
+
+
+```{r Treatment Ratio, echo = FALSE}
+
+
+results %>% 
+  select("Treatment","RatioSEM", "PartOfSpine") %>%
+  drop_na(RatioSEM) %>% 
+  group_by(Treatment, PartOfSpine) %>%
+  mutate(se = std.error(RatioSEM)) %>%
+  mutate(mean = (mean(RatioSEM))) %>%
+  
+  ggplot(aes(Treatment, mean, fill = Treatment)) +
+    geom_col(position = "dodge") +
+    facet_grid(cols = vars(PartOfSpine)) +
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se), 
+                      width = 0.4, position = position_dodge(.9)) +
+    scale_x_discrete(name=NULL,
+                     labels = c("Control", "Acidified", "Heated", "Heated/Acidified")) +
+    scale_y_continuous(name="Calcification Ratio", breaks = seq(0,3.5, by = .5)) +
+    scale_fill_manual(values = c("gray40", "skyblue3","firebrick3", "mediumpurple3" )) +
+    scale_colour_identity() +
+    theme_bw() +
+    theme(legend.position = "none") +
+    geom_text(aes(x= 1, y = 1, label = ""))
+  
+#ggsave("CalcRatioTrtmnt.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)  
+```
+
+
+```{r calcification ratio TxpH, echo = FALSE}
+
+results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  drop_na(RatioSEM) %>% 
+  dplyr::group_by(Temperature, pH, PartOfSpine) %>%
+  mutate(se = std.error(RatioSEM)) %>%
+  mutate(mean = (mean(RatioSEM))) %>%
+  
+  ggplot(aes(Temperature, mean, fill = pH)) +
+    geom_col(position = "dodge") +
+    facet_grid(cols = vars(PartOfSpine)) +
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se), 
+                      width = 0.4, position = position_dodge(.9)) +
+    scale_x_discrete(name=NULL,
+                     labels = c("Ambient Temperature", "High Temperature")) +
+    scale_y_continuous(name="Calcification Ratio", breaks = seq(0,3.5, by = .5)) +
+    scale_fill_manual(name = NULL, 
+                      values = c("skyblue3", "gray40"),
+                      labels = c("Low pH", "Ambient pH"),
+                      guide = guide_legend(reverse = TRUE)) +
+    theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.98), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) +
+    geom_text(aes(x= 1, y = 1, label = ""))
+  
+
+#ggsave("CalcRatio.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)  
+
+```
+
+**Figure 3.3.** Effect of temperature and pH on the calcification ratio at the base (a) and tip (b) of spine cross-sections. Letters indicate significant difference in post hoc pairwise tests. Data are means ± standard error (s.e.), n = 14-18.
+
+### Effect on Relative Spine Length
+
+Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length (Fig. 3.4). 
+
+
+```{r Relative Spine Lengths, echo = FALSE}
+
+results %>% 
+  select("Temperature","pH","RatioLength", "Chosen") %>%
+  drop_na(RatioLength) %>%
+  mutate(Ratio = RatioLength/2) %>% 
+  filter(Chosen == "yes") %>% 
+  group_by(Temperature, pH) %>%
+  mutate(se = std.error(Ratio)) %>%
+  mutate(mean = mean(Ratio)) %>% 
+  
+  ggplot(aes(Temperature, mean, fill = pH)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se), 
+                      width = 0.2, position = position_dodge(.9)) +
+    scale_x_discrete(name=NULL,
+                     labels = c("Ambient Temperature", "High Temperature")) +
+    scale_y_continuous(name="Relative Spine Length (% of TD)", 
+                       breaks = seq(0,20, by = 2),
+                       expand = expand_scale(add = c(0, 2))) +
+    scale_fill_manual(name = NULL, 
+                      values = c("skyblue3", "gray40"),
+                      labels = c("Low pH", "Ambient pH"),
+                      guide = guide_legend(reverse = TRUE)) +
+    theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.01, 1), 
+          legend.justification = c("left", "top"),
+          legend.background = element_blank()) +
+    geom_text(aes(x= 1, y = 1, label = ""))
+
+#ggsave("RelativeSpineLength.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+**Figure 3.4.** Effect of temperature and pH on the relative spine lengths. Data are means ± standard error (s.e.), n = 51.
+
+### Effect on Spine Dropped
+
+Low pH significantly increased the number of spines shed on the bottom of the tank regardless of temperature throughout the experimental period (p<0.0001). Urchins in low pH and ambient temperatures shed more spines than those in the control (ambient pH and ambient temperature) (p = 0.004) and ambient pH and high temperatures (p = 0.045). Those in low pH and high temperatures also shed more spines than those in the control (p=0.011) (Fig 3.5). 
+
+
+```{r dropped spines, echo = FALSE}
+
+results %>% 
+  select("Temperature","pH","SpineCount") %>%
+  drop_na(SpineCount) %>% 
+  group_by(Temperature, pH) %>%
+  mutate(se = std.error(SpineCount)) %>%
+  mutate(meanCount = mean(SpineCount)) %>% 
+  
+  ggplot(aes(Temperature, meanCount, fill = pH)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = meanCount-se, ymax = meanCount+se), 
+                      width = 0.2, position = position_dodge(.9)) +
+    scale_x_discrete(name=NULL,
+                     labels = c("Ambient Temperature", "High Temperature")) +
+    scale_y_continuous(name="Dropped Spines (Count)", breaks = seq(0,30, by = 2)) +
+    scale_fill_manual(name = NULL, 
+                      values = c("skyblue3", "gray40"),
+                      labels = c("Low pH", "Ambient pH"),
+                      guide = guide_legend(reverse = TRUE)) +
+    theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.98), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) +
+    geom_text(aes(x= 1, y = 1, label = ""))
+
+#ggsave("DroppedSpines.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+**Figure 3.5.** Effect of temperature and pH on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6  
+
+```{r Dropped Spine by Treatment, echo = FALSE}
+
+
+results %>% 
+  select("Treatment","SpineCount") %>%
+  drop_na(SpineCount) %>% 
+  group_by(Treatment) %>%
+  mutate(se = std.error(SpineCount)) %>%
+  mutate(meanCount = mean(SpineCount)) %>% 
+  
+  ggplot(aes(Treatment, meanCount, fill = Treatment)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = meanCount-se, ymax = meanCount+se), 
+                      width = 0.2, position = position_dodge(.9)) +
+    scale_x_discrete(name=NULL,
+                     labels = c("Control", "Acidified", "Heated", "Heated/Acidified")) +
+    scale_y_continuous(name="Dropped Spines (Count)", breaks = seq(0,30, by = 2)) +
+    scale_fill_manual(values = c("gray40", "skyblue3","firebrick3", "mediumpurple3" )) +
+    theme_bw() +
+    theme(legend.position = "none") +
+    geom_text(aes(x= 1, y = 1, label = ""))
+
+#ggsave("DroppedSpinesTrtmnt.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+**Figure.** Effect of treatment on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6 
+
+```{r Spine Steroem Organization, echo = FALSE}
+
+
+results %>% 
+  select("Temperature", "pH", "PcntUnorganized") %>% 
+  drop_na(PcntUnorganized) %>% 
+  
+    ggplot(aes(Temperature, PcntUnorganized, fill = pH)) +
+    geom_col(position = "dodge") +
+    scale_x_discrete(name=NULL,
+                     labels = c("Ambient Temperature", "High Temperature")) +
+    scale_y_continuous(name="Bases with Unorganized Spine Structure (%)", breaks = seq(0,100, by = 10)) +
+    scale_fill_manual(name = NULL, 
+                      values = c("skyblue3", "gray40"),
+                      labels = c("Low pH", "Ambient pH")) +
+      theme_bw() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.98), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) +
+    geom_text(aes(x= 1, y = 1, label = ""))
+
+#ggsave("PercentUnorganized.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+**Figure.** Effect of temperature and pH on the percent of bases with an unorganized steorom structure. (n = 17-18)
+

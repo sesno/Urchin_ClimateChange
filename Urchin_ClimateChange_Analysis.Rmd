@@ -1,0 +1,333 @@
+---
+title: "Analysis for Growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
+author: "Emily Sesno"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+rm(list=ls(all=TRUE))
+setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
+results <- read.csv("Urchin_ClimateChange_Data.csv", header=T, na="NA")
+
+library("lsmeans") #post-hoc tests
+library("effects") #plot effects of modeling
+library("lmtest") #linear mixed modeling
+library("lme4") #linear mixed modeling
+library("lmerTest") #calculate p-values in models
+library("emmeans") #post-hoc tests
+library("cowplot") #arrange plots
+library("MuMIn")
+library("car") #levenes tests, Anova, qqPlots, 
+library("tidyverse")
+library("stats")
+library("plyr")  #splitting, applying, and combining data
+library("dplyr")
+library("onewaytests") #allows for Welch test with unequal variances (spine lengths)
+library("stats")
+library("effsize")
+library("FSA")
+library("rcompanion")
+library("broom") #turns model output into data frames
+
+
+```
+
+## Steps for completing mixed model analysis:
+1. Build and run model
+2. Check for normality of residuals
+3. Check for homogeniety of variance of residuals
+4. Look at model summary
+5. Run anova to check for significance
+6. Run post-hoc
+
+## Growth
+Test diameters were not significantly different among all urchins upon initial collection (mean = 7.54 +/- 0.29 mm; n=24; F3,20=0.851; p=0.4825) or after subsequent ramp-up of conditions (mean = 16.12 +/- 0.67 mm; n=24; F3,20=1.0907; p=0.3759). Increased temperatures significantly influenced growth (p = 0.042) while pH did not (p=0.611) (Fig. 3.2). Urchins grown in increased temperatures were 12 % larger than those in ambient conditions, regardless of pH. There was no interaction between temperature and pH (p=0.482) (Fig. 3.2). 
+
+```{r Growth}
+
+Initial <-
+  #seperate out the initial sizes of urchins on day 1 (official start of experiment, when desired conditions were met, aka 24 days after getting the urchins - 2 weeks after acclimation, then 2 weeks after ramp up. n=24 urchins )
+  results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column
+    filter(Day == "1") %>% 
+      #sizes on day 1  
+    select("Temperature", "pH", "Diameter", "TankID")
+
+
+Final <- 
+  #seperate out the final sizes of urchins on day 126
+   results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>% 
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column
+    filter(Day == "126") %>% 
+      #filter for sizes on day 126
+    select("Temperature", "pH", "Diameter","TankID")
+
+
+Growth <- 
+  bind_cols(Initial, Final) %>% 
+    #binds initial (Diameter) and final (Diameter1) sizes to calculate growth
+  mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>% 
+    #add column for growth calculation
+  select("Growth")
+
+resultsGrow <-
+  #table of initial and final size data
+  results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "TankID", "Diam1", "Diam2") %>% 
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+    filter(Day == "126")
+resultsGrow <- bind_cols(resultsGrow, Growth)
+  #combines table of initial and final with growth information
+
+modGrow <- 
+  #linear mixed model of growth
+  resultsGrow %>% 
+  lmer(Growth~ Temperature * pH + (1|TankID), data=.)
+
+summary(modGrow)
+Anova(modGrow, type=2)
+
+#Interaction Growth
+interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(Growth)),)
+
+## ASSSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modGrow)) #Normal enough
+hist(residuals(modGrow))
+shapiro.test(residuals(modGrow)) #passes
+
+# 2. Equal variances
+leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
+plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
+
+
+
+
+```
+
+
+```{r Growth 2 (with day -14 as day 1)}
+
+Initial1 <-
+  results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>%
+    filter(TankID != "8t" ) %>% 
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>%
+    filter(Day == "-13") %>%  
+    select("Temperature", "pH", "Diameter", "TankID")
+
+Final1 <- 
+   results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>% 
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>%
+    filter(Day == "126") %>% 
+    select("Temperature", "pH", "Diameter","TankID")
+
+Growth1 <- 
+  bind_cols(Initial1, Final1) %>% 
+  mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>% 
+  select("Growth")
+
+resultsGrow1 <-
+  results %>% 
+    select("Day", "Treatment", "Temperature", "pH", "TankID", "Diam1", "Diam2") %>% 
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+    filter(Day == "126")
+resultsGrow1 <- bind_cols(resultsGrow1, Growth1)
+
+modGrow1 <- 
+  resultsGrow1 %>% 
+  lmer(Growth~ Temperature * pH + (1|TankID), data=.)
+
+summary(modGrow1)
+Anova(modGrow1, type=2)
+anova(modGrow1, type=2)
+
+## ASSSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modGrow1)) #Normal enough
+hist(residuals(modGrow1))
+shapiro.test(residuals(modGrow1)) #passes
+# 2. Equal variances
+leveneTest(residuals(modGrow1)~resultsGrow1$Treatment) #Passes
+plot(fitted(modGrow1),resid(modGrow1,type="pearson"),col="blue")
+
+#Interaction Growth
+interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(Growth)),)
+
+
+```
+
+
+# Calcification
+```{r Calcification}
+
+########  Model 1: Tip ########
+
+resultsTip <- 
+  results %>% 
+  select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+  drop_na(RatioSEM) %>% 
+  filter(Chosen == "yes", PartOfSpine == "Tip")
+  
+modTip <-
+  resultsTip %>% 
+  lmer(RatioSEM ~ Temperature * pH + (1|TankID), data = .)
+
+summary(modTip)
+Anova(modTip, type=2)
+
+## ASSSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modTip)) #Normal
+hist(residuals(modTip))
+shapiro.test(residuals(modTip)) #Pass
+# 2. Equal variances
+leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
+plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
+
+## POST HOC ANALYSIS 
+emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey")
+multcomp::cld(emmTip)
+pwpp(emmTip)
+
+#Interaction Tip
+interaction.plot(resultsTip$Temperature,resultsTip$pH,resultsTip$RatioSEM,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(Growth)),)
+
+########## Model 2: BASE ###########
+
+resultsBase <-
+  results %>% 
+  select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+  drop_na(RatioSEM) %>% 
+  filter(Chosen == "yes", PartOfSpine == "Base")
+
+modBase <- 
+  resultsBase %>% 
+  lmer(RatioSEM~ Temperature * pH + (1|TankID), data=.)
+
+summary(modBase) 
+Anova(modBase, type=2)
+
+## ASSSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modBase)) #Normal
+hist(residuals(modBase))
+shapiro.test(residuals(modBase)) # Pass
+# 2. Equal variances
+leveneTest(residuals(modBase)~resultsBase$Treatment) #Pass
+plot(fitted(modBase),resid(modBase,type="pearson"),col="blue")
+
+## POST HOC ANALYSIS 
+emmBase <- emmeans(modBase, ~Temperature*pH, adjust = "tukey")
+multcomp::cld(emmBase)
+pwpp(emmBase)
+
+#Interaction Base
+interaction.plot(resultsBase$Temperature,resultsBase$pH,resultsBase$RatioSEM,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(RatioSEM)),)
+
+```
+
+# Relative Spine Lengths
+```{r, Spine Lengths}
+
+resultsLength <-
+  results %>% 
+  select ("Treatment", "Temperature", "pH", "RatioLength", "Chosen", "TankID") %>% 
+  drop_na(RatioLength) %>% 
+  filter(Chosen == "yes")
+
+######  MODEL  ######
+modLength <- 
+  resultsLength %>% 
+  lmer(RatioLength~Temperature*pH + (1|TankID), data=.)
+
+summary(modLength)
+Anova(modLength, type=2)
+
+###### ASSSUMPTIONS ######
+# 1. Normality of residuals
+qqPlot(residuals(modLength)) #Normal
+hist(residuals(modLength))
+shapiro.test(residuals(modLength)) #Pass
+# 2. Equal variances
+leveneTest(residuals(modLength)~resultsLength$Treatment) #Pass
+plot(fitted(modLength),resid(modLength,type="pearson"),col="blue")
+
+#####  POST HOC ANALYSIS #####
+emmLength <- emmeans(modLength, ~Temperature*pH, adjust = "tukey")
+multcomp::cld(emmLength)
+pwpp(emmLength)
+
+#Interaction Base
+interaction.plot(resultsLength$Temperature,resultsLength$pH,resultsLength$RatioLength,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(RatioLength)),)
+
+```
+
+# Dropped Spines
+```{r Dropped Spines}
+
+resultsDropped <-
+  results %>% 
+  select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
+  drop_na(SpineCount)
+
+## Non parametric ###
+kruskal.test(resultsDropped$SpineCount~resultsDropped$Treatment)# SIG*** (p=0.0005563)
+
+### POST HOC Pairwise ######
+dunn <- 
+  resultsDropped %>% 
+  dunnTest(SpineCount ~ Treatment,
+           method = "holm", kw = TRUE, data = .)
+dunnph <- dunn$res
+cldList(P.adj ~ Comparison, data = dunnph, threshold = 0.05)
+
+#Interaction Base
+interaction.plot(resultsDropped$Temperature,resultsDropped$pH,resultsDropped$SpineCount,
+                 type = c("l","p", "b", "o","c"), legend = TRUE,
+                 trace.label = deparse(substitute(pH)),
+                 fixed = FALSE,
+                 xlab = deparse(substitute(Temperature)),
+                 ylab = deparse(substitute(SpineCount)),)
+
+```
+
