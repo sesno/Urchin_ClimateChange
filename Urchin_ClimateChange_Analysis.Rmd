@@ -46,8 +46,11 @@ Test diameters were not significantly different among all urchins upon initial c
 
 ```{r Growth}
 
+### GROWTH MODEL 1: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
+
+
 Initial <-
-  #seperate out the initial sizes of urchins on day 1 (official start of experiment, when desired conditions were met, aka 24 days after getting the urchins - 2 weeks after acclimation, then 2 weeks after ramp up. n=24 urchins )
+  #seperate out the initial sizes of urchins on day 1, when desired conditions were met.
   results %>% 
     select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>%
     filter(TankID != "8t" ) %>% 
@@ -73,11 +76,13 @@ Final <-
 
 
 Growth <- 
+  #create column that is growth
   bind_cols(Initial, Final) %>% 
     #binds initial (Diameter) and final (Diameter1) sizes to calculate growth
   mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>% 
     #add column for growth calculation
   select("Growth")
+
 
 resultsGrow <-
   #table of initial and final size data
@@ -89,15 +94,28 @@ resultsGrow <-
 resultsGrow <- bind_cols(resultsGrow, Growth)
   #combines table of initial and final with growth information
 
-modGrow <- 
-  #linear mixed model of growth
+
+#LMM for growth:
+modGrow <-
   resultsGrow %>% 
   lmer(Growth~ Temperature * pH + (1|TankID), data=.)
 
 summary(modGrow)
-Anova(modGrow, type=2)
+Anova(modGrow, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modGrow) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
 
-#Interaction Growth
+## ASSSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modGrow)) #Normal enough?
+shapiro.test(residuals(modGrow)) #passes
+hist(residuals(modGrow)) #looks normal
+
+
+# 2. Equal variances
+leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
+plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
+
+#Interaction plot shows slight interaction
 interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
@@ -105,72 +123,83 @@ interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
                  xlab = deparse(substitute(Temperature)),
                  ylab = deparse(substitute(Growth)),)
 
-## ASSSUMPTIONS
-# 1. Normality of residuals
-qqPlot(residuals(modGrow)) #Normal enough
-hist(residuals(modGrow))
-shapiro.test(residuals(modGrow)) #passes
-
-# 2. Equal variances
-leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
-plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
-
-
-
 
 ```
 
 
-```{r Growth 2 (with day -14 as day 1)}
+```{r Growth 2 (with day -13 as day 1)}
+
+### GROWTH MODEL 2: If run the same model using day -13 as the first technical day of the experiment. This is the day conditions began to ramp up, so urchins were experiencing gradual increase of stressors.
+
 
 Initial1 <-
+    #seperate out the initial sizes of urchins on day -14, when conditions began to ramp up.
   results %>% 
     select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>%
     filter(TankID != "8t" ) %>% 
+        #remove urchin number 8 which died halfway through
     drop_na(Diam1, Diam2) %>% 
     gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>%
+      #gather Diam1 and Diam2 into single column
     filter(Day == "-13") %>%  
+      #filter for day at -13 to use this as the intial size.
     select("Temperature", "pH", "Diameter", "TankID")
 
+
 Final1 <- 
+      #seperate out the final sizes of urchins on day 126
    results %>% 
     select("Day", "Treatment", "Temperature", "pH", "Diam1", "Diam2", "TankID") %>% 
     drop_na(Diam1, Diam2) %>% 
     gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>%
+      #gather Diam1 and Diam2 into single column
     filter(Day == "126") %>% 
+      #filter for size on last day of experiment
     select("Temperature", "pH", "Diameter","TankID")
 
+
 Growth1 <- 
+  #create column that is growth
   bind_cols(Initial1, Final1) %>% 
-  mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>% 
+    #binds initial (Diameter) and final (Diameter1) sizes to calculate growth
+  mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>%
+    #add column for growth calculation
   select("Growth")
 
+
 resultsGrow1 <-
+  #table of initial and final size data
   results %>% 
     select("Day", "Treatment", "Temperature", "pH", "TankID", "Diam1", "Diam2") %>% 
     drop_na(Diam1, Diam2) %>% 
     gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
     filter(Day == "126")
 resultsGrow1 <- bind_cols(resultsGrow1, Growth1)
+  #combines table of initial and final with growth information
 
+
+#LMM for growth:
 modGrow1 <- 
   resultsGrow1 %>% 
   lmer(Growth~ Temperature * pH + (1|TankID), data=.)
 
+
 summary(modGrow1)
-Anova(modGrow1, type=2)
-anova(modGrow1, type=2)
+Anova(modGrow1, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modGrow1) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+
 
 ## ASSSUMPTIONS
 # 1. Normality of residuals
-qqPlot(residuals(modGrow1)) #Normal enough
-hist(residuals(modGrow1))
-shapiro.test(residuals(modGrow1)) #passes
+qqPlot(residuals(modGrow1)) #More normal than Growth model 1
+shapiro.test(residuals(modGrow1)) #passes 
+hist(residuals(modGrow1)) #looks normal
+
 # 2. Equal variances
-leveneTest(residuals(modGrow1)~resultsGrow1$Treatment) #Passes
+leveneTest(residuals(modGrow1)~resultsGrow1$Treatment) #doesn't pass...
 plot(fitted(modGrow1),resid(modGrow1,type="pearson"),col="blue")
 
-#Interaction Growth
+#Interaction plot shows interaction
 interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
@@ -185,34 +214,46 @@ interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
 # Calcification
 ```{r Calcification}
 
-########  Model 1: Tip ########
+### Model 1: calcification at the tips of spines
+
 
 resultsTip <- 
+  #create data using only the SEM images of the tips of spines.
   results %>% 
   select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+    #selects for desired variables. PartOfSpine is tip or base, Chosen indicates which side of the image (arbitrary) is selected for (aka has no dust)
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Tip")
-  
+    #filters only for tips and chosen side. No dusty images to be analyzed.
+ 
+
+#LMM for calcification at the tips of spines 
 modTip <-
   resultsTip %>% 
   lmer(RatioSEM ~ Temperature * pH + (1|TankID), data = .)
 
 summary(modTip)
-Anova(modTip, type=2)
+Anova(modTip, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modTip) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+
 
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modTip)) #Normal
-hist(residuals(modTip))
 shapiro.test(residuals(modTip)) #Pass
+hist(residuals(modTip))
+
 # 2. Equal variances
 leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
 plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
 
 ## POST HOC ANALYSIS 
-emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey")
+emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey") 
+  #Estimated marginal means (Least-squares means)
 multcomp::cld(emmTip)
+  #create a compact letter display of all pair-wise comparisons
 pwpp(emmTip)
+  #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
 
 #Interaction Tip
 interaction.plot(resultsTip$Temperature,resultsTip$pH,resultsTip$RatioSEM,

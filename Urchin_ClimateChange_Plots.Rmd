@@ -415,8 +415,10 @@ results %>%
 
 ```{r Spine Steroem Organization, echo = FALSE}
 
+setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
+structure <- read.csv("Urchin_ClimateChange_Structure.csv", header=T, na="NA")
 
-results %>% 
+structure %>% 
   select("Temperature", "pH", "PcntUnorganized") %>% 
   drop_na(PcntUnorganized) %>% 
   

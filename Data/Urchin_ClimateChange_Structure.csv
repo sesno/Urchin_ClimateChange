@@ -1,4 +1,4 @@
-﻿Date,Day,Treatment,Header,TankID,Temperature,pH,Temp,pHspec,Sal,Diam1,Diam2,DiamMean,Growth,Height,pCO2out,AlkTotal,PartOfSpine,Chosen,RatioSEM,SpineLength,RatioLength,SpineCount,SEMPatterened,SEMNone,PercentUnorganized
+﻿Date,Day,Treatment,Header,TankID,Temperature,pH,Temp,pHspec,Sal,Diam1,Diam2,DiamMean,Growth,Height,pCO2out,AlkTotal,PartOfSpine,Chosen,RatioSEM,SpineLength,RatioLength,SpineCount,SEMPatterened,SEMNone,PcntUnorganized
 NA,NA,AMB,NA,NA,Ambient,Ambient,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,16,2,11
 NA,NA,OA,NA,NA,Ambient,Acidified,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,4,14,78
 NA,NA,T,NA,NA,Heated,Ambient,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,11,4,26
