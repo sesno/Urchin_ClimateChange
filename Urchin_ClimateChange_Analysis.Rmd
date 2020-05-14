@@ -57,7 +57,7 @@ Initial <-
       #remove urchin number 8 which died halfway through
     drop_na(Diam1, Diam2) %>% 
     gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
-      #gather Diam1 and Diam2 into single column
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
     filter(Day == "1") %>% 
       #sizes on day 1  
     select("Temperature", "pH", "Diameter", "TankID")
@@ -211,9 +211,11 @@ interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
 ```
 
 
-# Calcification
-```{r Calcification}
+## Calcification
 
+There was no significant effect of temperature (p=0.387), pH (p=0.437), or the interaction of both (p=0.091) on the calcification ratio of cross-sections at the tips of T. gratilla spines. At the base of the spines, pH contributed to a significant reduction of the calcification ratio (p=0.002) while temperature did not (p=0.164). Calcification ratios were 16% lower in acidified conditions, regardless of temperature. There was no interaction between temperature and pH on the calcification ratio at the base of the spines (p=0.536) (Fig. 3.3). 
+
+```{r Calcification tip}
 ### Model 1: calcification at the tips of spines
 
 
@@ -248,51 +250,64 @@ leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
 plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
 
 ## POST HOC ANALYSIS 
-emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey") 
-  #Estimated marginal means (Least-squares means)
-multcomp::cld(emmTip)
-  #create a compact letter display of all pair-wise comparisons
-pwpp(emmTip)
-  #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
+emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey")  #Estimated marginal means (Least-squares means)
+multcomp::cld(emmTip) #create a compact letter display of all pair-wise comparisons
+pwpp(emmTip) #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
+  
 
-#Interaction Tip
+#Interaction plot for cacification at the tip of the spines - interaction
 interaction.plot(resultsTip$Temperature,resultsTip$pH,resultsTip$RatioSEM,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
                  fixed = FALSE,
                  xlab = deparse(substitute(Temperature)),
                  ylab = deparse(substitute(Growth)),)
+```
 
-########## Model 2: BASE ###########
+```{r Calcification base}
+
+### Model 2: calcification in the base of the spines
 
 resultsBase <-
+   #create data using only the SEM images of the base of spines.
   results %>% 
   select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+    #selects for desired variables. PartOfSpine is tip or base, Chosen indicates which side of the image (arbitrary) is selected for (aka has no dust)
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Base")
+    #filters only for tips and chosen side. No dusty images to be analyzed.
 
+
+#LMM for calcification at the tips of spines 
 modBase <- 
   resultsBase %>% 
   lmer(RatioSEM~ Temperature * pH + (1|TankID), data=.)
 
 summary(modBase) 
-Anova(modBase, type=2)
+Anova(modBase, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modBase) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+
 
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modBase)) #Normal
-hist(residuals(modBase))
 shapiro.test(residuals(modBase)) # Pass
+hist(residuals(modBase))
+
 # 2. Equal variances
 leveneTest(residuals(modBase)~resultsBase$Treatment) #Pass
 plot(fitted(modBase),resid(modBase,type="pearson"),col="blue")
 
+
 ## POST HOC ANALYSIS 
 emmBase <- emmeans(modBase, ~Temperature*pH, adjust = "tukey")
+  #Estimated marginal means (Least-squares means)
 multcomp::cld(emmBase)
+  #create a compact letter display of all pair-wise comparisons
 pwpp(emmBase)
+  #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
 
-#Interaction Base
+#Interaction plot for calcification at the base of the spines - no interaction
 interaction.plot(resultsBase$Temperature,resultsBase$pH,resultsBase$RatioSEM,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
@@ -302,38 +317,51 @@ interaction.plot(resultsBase$Temperature,resultsBase$pH,resultsBase$RatioSEM,
 
 ```
 
-# Relative Spine Lengths
+## Relative Spine Lengths
+
+Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length (Fig. 3.4). 
+
 ```{r, Spine Lengths}
 
+### Comparison of spine lengths relative to test diameter
+
 resultsLength <-
+  #create data table of only necessary variables
   results %>% 
   select ("Treatment", "Temperature", "pH", "RatioLength", "Chosen", "TankID") %>% 
   drop_na(RatioLength) %>% 
   filter(Chosen == "yes")
 
-######  MODEL  ######
+## LMM for relative spine lengths
 modLength <- 
   resultsLength %>% 
   lmer(RatioLength~Temperature*pH + (1|TankID), data=.)
 
 summary(modLength)
-Anova(modLength, type=2)
+Anova(modLength, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modLength) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
 
-###### ASSSUMPTIONS ######
+
+### ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modLength)) #Normal
-hist(residuals(modLength))
 shapiro.test(residuals(modLength)) #Pass
+hist(residuals(modLength))
+
 # 2. Equal variances
 leveneTest(residuals(modLength)~resultsLength$Treatment) #Pass
 plot(fitted(modLength),resid(modLength,type="pearson"),col="blue")
 
-#####  POST HOC ANALYSIS #####
-emmLength <- emmeans(modLength, ~Temperature*pH, adjust = "tukey")
-multcomp::cld(emmLength)
-pwpp(emmLength)
 
-#Interaction Base
+### POST HOC ANALYSIS 
+emmLength <- emmeans(modLength, ~Temperature*pH, adjust = "tukey")
+  #Estimated marginal means (Least-squares means)
+multcomp::cld(emmLength)
+  #create a compact letter display of all pair-wise comparisons
+pwpp(emmLength)
+  #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
+
+#Interaction plot for relative spine lengths - no interaction
 interaction.plot(resultsLength$Temperature,resultsLength$pH,resultsLength$RatioLength,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
@@ -343,15 +371,60 @@ interaction.plot(resultsLength$Temperature,resultsLength$pH,resultsLength$RatioL
 
 ```
 
-# Dropped Spines
+## Dropped Spines
+
+Low pH significantly increased the number of spines shed on the bottom of the tank regardless of temperature throughout the experimental period (p<0.0001). Urchins in low pH and ambient temperatures shed more spines than those in the control (ambient pH and ambient temperature) (p = 0.004) and ambient pH and high temperatures (p = 0.045). Those in low pH and high temperatures also shed more spines than those in the control (p=0.011) (Fig 3.5). 
+
 ```{r Dropped Spines}
 
+## Number of loose spines counted at the bottom of tanks at the end of the experiment. These were either broken or shed. Note: these spines were not collected, just counted, so can not determine whether they were broken or shed.
+
 resultsDropped <-
+  #create data using only the needed variables.
   results %>% 
   select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
   drop_na(SpineCount)
 
-## Non parametric ###
+
+##LM of dropped spines - can't make it LMM because error: number of levels of each grouping factor must be < number of observations - only have one count for each TankID.
+modDropped <- 
+  resultsDropped %>% 
+  lm(SpineCount~ Temperature * pH, data=.)
+
+summary(modDropped)
+Anova(modDropped, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modLength) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+
+##ASSUMPTIONS
+# 1. Normality of residuals
+qqPlot(residuals(modDropped)) #not normal
+shapiro.test(residuals(modDropped)) #faaaiiilll
+hist(residuals(modDropped))
+
+# 2. Equal variances
+leveneTest(residuals(modDropped)~resultsDropped$Treatment) # barely pass
+plot(fitted(modDropped),resid(modDropped,type="pearson"),col="blue")
+
+##DOES NOT MEET ASSUMPTIONS so ATTEMPT AT Transformation:
+resultsDropped$tdata<-(resultsDropped$SpineCount)^1/2
+  # transformation
+modDropped1 <- lm(tdata~ Temperature * pH, data=resultsDropped)
+  # run lm model of transformed data
+
+###ASSUMPTIONS for Transformation
+# 1. Normality of residuals
+qqPlot(residuals(modDropped1)) #not normal
+shapiro.test(residuals(modDropped1)) #fail
+hist(residuals(modDropped1))
+# 2. equal variances
+bartlett.test(residuals(modDropped1)~resultsDropped$Treatment) #fail
+plot(fitted(modDropped1),resid(modDropped1,type="pearson"),col="blue")
+
+
+summary(modDropped1)
+Anova(modDropped1, type=2) #test for significance of model
+
+### Transformations not work, so use non parametric:
 kruskal.test(resultsDropped$SpineCount~resultsDropped$Treatment)# SIG*** (p=0.0005563)
 
 ### POST HOC Pairwise ######
@@ -362,7 +435,7 @@ dunn <-
 dunnph <- dunn$res
 cldList(P.adj ~ Comparison, data = dunnph, threshold = 0.05)
 
-#Interaction Base
+#Interaction plot for dropped spines - no interaction
 interaction.plot(resultsDropped$Temperature,resultsDropped$pH,resultsDropped$SpineCount,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
                  trace.label = deparse(substitute(pH)),
