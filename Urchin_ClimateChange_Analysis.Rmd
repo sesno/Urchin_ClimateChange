@@ -1,14 +1,21 @@
 ---
 title: "Analysis for Growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
 author: "Emily Sesno"
-output: html_document
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+    smart: false
+  pdf_document:
+    keep_tex: yes
 ---
 
 ```{r setup, include=FALSE}
 
-rm(list=ls(all=TRUE))
-setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
-results <- read.csv("Urchin_ClimateChange_Data.csv", header=T, na="NA")
+rm(list=ls(all=TRUE)) 
+results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na="NA")
 
 library("lsmeans") #post-hoc tests
 library("effects") #plot effects of modeling
@@ -29,21 +36,27 @@ library("effsize")
 library("FSA")
 library("rcompanion")
 library("broom") #turns model output into data frames
-
-
 ```
 
-## Steps for completing mixed model analysis:
-1. Build and run model
-2. Check for normality of residuals
-3. Check for homogeniety of variance of residuals
-4. Look at model summary
-5. Run anova to check for significance
-6. Run post-hoc
+## Analysis approach:  
+1. Build and run model  
+2. Check for normality of residuals  
+3. Check for homogeniety of variance of residuals  
+4. Look at model summary  
+5. Run anova to check for significance of main effects  
+6. Run post-hoc to test hypotheses  
 
-## Growth
-Test diameters were not significantly different among all urchins upon initial collection (mean = 7.54 +/- 0.29 mm; n=24; F3,20=0.851; p=0.4825) or after subsequent ramp-up of conditions (mean = 16.12 +/- 0.67 mm; n=24; F3,20=1.0907; p=0.3759). Increased temperatures significantly influenced growth (p = 0.042) while pH did not (p=0.611) (Fig. 3.2). Urchins grown in increased temperatures were 12 % larger than those in ambient conditions, regardless of pH. There was no interaction between temperature and pH (p=0.482) (Fig. 3.2). 
+## Growth  
 
+Results: 
+
+Test diameters were not significantly different among all urchins upon initial collection (mean = 7.54 +/- 0.29 mm; n=24; F3,20=0.851; p=0.4825) or after subsequent ramp-up of conditions (mean = 16.12 +/- 0.67 mm; n=24; F3,20=1.0907; p=0.3759). Increased temperatures significantly influenced growth (p = 0.042) while pH did not (p=0.611). Urchins grown in increased temperatures were 12 % larger than those in ambient conditions, regardless of pH. There was no interaction between temperature and pH (p=0.482).   
+
+Analysis: 
+
+### Initial as day 1
+
+Subset data frame to obtain growth measurements.  
 ```{r Growth}
 
 ### GROWTH MODEL 1: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
@@ -93,20 +106,27 @@ resultsGrow <-
     filter(Day == "126")
 resultsGrow <- bind_cols(resultsGrow, Growth)
   #combines table of initial and final with growth information
+```
 
-
+```{r, results=TRUE}
 #LMM for growth:
 modGrow <-
   resultsGrow %>% 
   lmer(Growth~ Temperature * pH + (1|TankID), data=.)
 
+#Need to decide on model type that we want to use. 
+
 summary(modGrow)
 Anova(modGrow, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
 anova(modGrow) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modGrow, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
+```
 
+Check assumptions of normality of residuals and homogeneity of variance. Assumptions are met.  
+```{r, results=TRUE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
-qqPlot(residuals(modGrow)) #Normal enough?
+qqPlot(residuals(modGrow)) 
 shapiro.test(residuals(modGrow)) #passes
 hist(residuals(modGrow)) #looks normal
 
@@ -114,7 +134,10 @@ hist(residuals(modGrow)) #looks normal
 # 2. Equal variances
 leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
 plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
+```
 
+Display exploratory interaction plot.  
+```{r, results=TRUE}
 #Interaction plot shows slight interaction
 interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
@@ -122,12 +145,12 @@ interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
                  fixed = FALSE,
                  xlab = deparse(substitute(Temperature)),
                  ylab = deparse(substitute(Growth)),)
-
-
 ```
 
+### Initial as day -13
 
-```{r Growth 2 (with day -13 as day 1)}
+Model growth as the day conditions began to ramp up.  
+```{r, results=FALSE}
 
 ### GROWTH MODEL 2: If run the same model using day -13 as the first technical day of the experiment. This is the day conditions began to ramp up, so urchins were experiencing gradual increase of stressors.
 
@@ -176,8 +199,10 @@ resultsGrow1 <-
     filter(Day == "126")
 resultsGrow1 <- bind_cols(resultsGrow1, Growth1)
   #combines table of initial and final with growth information
+```
 
-
+Analyze with linear mixed model.  
+```{r, results=TRUE}
 #LMM for growth:
 modGrow1 <- 
   resultsGrow1 %>% 
@@ -185,19 +210,28 @@ modGrow1 <-
 
 
 summary(modGrow1)
+
+#need to pick anova method
 Anova(modGrow1, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modGrow1) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modGrow1, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+```
 
-
+Check assumptions.  
+```{r, results=TRUE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
-qqPlot(residuals(modGrow1)) #More normal than Growth model 1
+qqPlot(residuals(modGrow1)) 
 shapiro.test(residuals(modGrow1)) #passes 
 hist(residuals(modGrow1)) #looks normal
 
 # 2. Equal variances
 leveneTest(residuals(modGrow1)~resultsGrow1$Treatment) #doesn't pass...
 plot(fitted(modGrow1),resid(modGrow1,type="pearson"),col="blue")
+```
+
+Display exploratory interaction plot.  
+
+```{r, results=TRUE}
 
 #Interaction plot shows interaction
 interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
@@ -207,15 +241,21 @@ interaction.plot(resultsGrow1$Temperature,resultsGrow1$pH,resultsGrow1$Growth,
                  xlab = deparse(substitute(Temperature)),
                  ylab = deparse(substitute(Growth)),)
 
-
 ```
 
 
 ## Calcification
 
-There was no significant effect of temperature (p=0.387), pH (p=0.437), or the interaction of both (p=0.091) on the calcification ratio of cross-sections at the tips of T. gratilla spines. At the base of the spines, pH contributed to a significant reduction of the calcification ratio (p=0.002) while temperature did not (p=0.164). Calcification ratios were 16% lower in acidified conditions, regardless of temperature. There was no interaction between temperature and pH on the calcification ratio at the base of the spines (p=0.536) (Fig. 3.3). 
+Results:   
 
-```{r Calcification tip}
+There was no significant effect of temperature (p=0.387), pH (p=0.437), or the interaction of both (p=0.091) on the calcification ratio of cross-sections at the tips of T. gratilla spines. At the base of the spines, pH contributed to a significant reduction of the calcification ratio (p=0.002) while temperature did not (p=0.164). Calcification ratios were 16% lower in acidified conditions, regardless of temperature. There was no interaction between temperature and pH on the calcification ratio at the base of the spines (p=0.536). 
+
+### Tips of spines    
+
+Analysis of calcification at the tip of the spine:  
+
+Assemble data.  
+```{r Calcification tip, results=FALSE}
 ### Model 1: calcification at the tips of spines
 
 
@@ -227,8 +267,10 @@ resultsTip <-
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Tip")
     #filters only for tips and chosen side. No dusty images to be analyzed.
- 
+```
 
+Analyse with linear mixed model:  
+```{r, results=TRUE}
 #LMM for calcification at the tips of spines 
 modTip <-
   resultsTip %>% 
@@ -236,9 +278,11 @@ modTip <-
 
 summary(modTip)
 Anova(modTip, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modTip) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modTip, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+```
 
-
+Check assumptions.  
+```{r, results=TRUE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modTip)) #Normal
@@ -248,13 +292,18 @@ hist(residuals(modTip))
 # 2. Equal variances
 leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
 plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
+```
 
+Conduct post hoc analysis.  
+```{r, results=TRUE}
 ## POST HOC ANALYSIS 
 emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey")  #Estimated marginal means (Least-squares means)
 multcomp::cld(emmTip) #create a compact letter display of all pair-wise comparisons
 pwpp(emmTip) #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
-  
+```  
 
+Display interaction plot for exploration.  
+```{r, results=TRUE}
 #Interaction plot for cacification at the tip of the spines - interaction
 interaction.plot(resultsTip$Temperature,resultsTip$pH,resultsTip$RatioSEM,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
@@ -264,6 +313,9 @@ interaction.plot(resultsTip$Temperature,resultsTip$pH,resultsTip$RatioSEM,
                  ylab = deparse(substitute(Growth)),)
 ```
 
+### Base of spines  
+
+Assemble data.  
 ```{r Calcification base}
 
 ### Model 2: calcification in the base of the spines
@@ -276,8 +328,9 @@ resultsBase <-
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Base")
     #filters only for tips and chosen side. No dusty images to be analyzed.
+```
 
-
+```{r, results=TRUE}
 #LMM for calcification at the tips of spines 
 modBase <- 
   resultsBase %>% 
@@ -285,9 +338,12 @@ modBase <-
 
 summary(modBase) 
 Anova(modBase, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modBase) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modBase, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+```
 
+Check assumptions. 
 
+```{r, results=TRUE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modBase)) #Normal
@@ -297,8 +353,9 @@ hist(residuals(modBase))
 # 2. Equal variances
 leveneTest(residuals(modBase)~resultsBase$Treatment) #Pass
 plot(fitted(modBase),resid(modBase,type="pearson"),col="blue")
+```
 
-
+```{r, results=TRUE}
 ## POST HOC ANALYSIS 
 emmBase <- emmeans(modBase, ~Temperature*pH, adjust = "tukey")
   #Estimated marginal means (Least-squares means)
@@ -306,7 +363,10 @@ multcomp::cld(emmBase)
   #create a compact letter display of all pair-wise comparisons
 pwpp(emmBase)
   #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
+```
 
+Display interaction plot.  
+```{r, results=TRUE}
 #Interaction plot for calcification at the base of the spines - no interaction
 interaction.plot(resultsBase$Temperature,resultsBase$pH,resultsBase$RatioSEM,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
@@ -317,10 +377,15 @@ interaction.plot(resultsBase$Temperature,resultsBase$pH,resultsBase$RatioSEM,
 
 ```
 
-## Relative Spine Lengths
+## Relative Spine Lengths  
 
-Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length (Fig. 3.4). 
+Results: 
 
+Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length. 
+
+Analysis: 
+
+Assemble data.  
 ```{r, Spine Lengths}
 
 ### Comparison of spine lengths relative to test diameter
@@ -331,7 +396,10 @@ resultsLength <-
   select ("Treatment", "Temperature", "pH", "RatioLength", "Chosen", "TankID") %>% 
   drop_na(RatioLength) %>% 
   filter(Chosen == "yes")
+``` 
 
+Analyze with linear mixed effect model.  
+```{r, results=TRUE}
 ## LMM for relative spine lengths
 modLength <- 
   resultsLength %>% 
@@ -339,9 +407,11 @@ modLength <-
 
 summary(modLength)
 Anova(modLength, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modLength) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modLength, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+```
 
-
+Check assumptions.  
+```{r, results=TRUE}
 ### ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modLength)) #Normal
@@ -351,8 +421,11 @@ hist(residuals(modLength))
 # 2. Equal variances
 leveneTest(residuals(modLength)~resultsLength$Treatment) #Pass
 plot(fitted(modLength),resid(modLength,type="pearson"),col="blue")
+```
 
+Conduct post hoc analysis.  
 
+```{r, results=TRUE}
 ### POST HOC ANALYSIS 
 emmLength <- emmeans(modLength, ~Temperature*pH, adjust = "tukey")
   #Estimated marginal means (Least-squares means)
@@ -360,7 +433,11 @@ multcomp::cld(emmLength)
   #create a compact letter display of all pair-wise comparisons
 pwpp(emmLength)
   #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
+```
 
+Display interaction plot.  
+
+```{r, results=TRUE}
 #Interaction plot for relative spine lengths - no interaction
 interaction.plot(resultsLength$Temperature,resultsLength$pH,resultsLength$RatioLength,
                  type = c("l","p", "b", "o","c"), legend = TRUE,
@@ -373,8 +450,13 @@ interaction.plot(resultsLength$Temperature,resultsLength$pH,resultsLength$RatioL
 
 ## Dropped Spines
 
-Low pH significantly increased the number of spines shed on the bottom of the tank regardless of temperature throughout the experimental period (p<0.0001). Urchins in low pH and ambient temperatures shed more spines than those in the control (ambient pH and ambient temperature) (p = 0.004) and ambient pH and high temperatures (p = 0.045). Those in low pH and high temperatures also shed more spines than those in the control (p=0.011) (Fig 3.5). 
+Results:  
 
+Low pH significantly increased the number of spines shed on the bottom of the tank regardless of temperature throughout the experimental period (p<0.0001). Urchins in low pH and ambient temperatures shed more spines than those in the control (ambient pH and ambient temperature) (p = 0.004) and ambient pH and high temperatures (p = 0.045). Those in low pH and high temperatures also shed more spines than those in the control (p=0.011). 
+
+Analysis:  
+
+Assemble data.  
 ```{r Dropped Spines}
 
 ## Number of loose spines counted at the bottom of tanks at the end of the experiment. These were either broken or shed. Note: these spines were not collected, just counted, so can not determine whether they were broken or shed.
@@ -384,8 +466,11 @@ resultsDropped <-
   results %>% 
   select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
   drop_na(SpineCount)
+```
 
+Analyse with linear mixed effect model.  
 
+```{r, results=TRUE}
 ##LM of dropped spines - can't make it LMM because error: number of levels of each grouping factor must be < number of observations - only have one count for each TankID.
 modDropped <- 
   resultsDropped %>% 
@@ -393,8 +478,10 @@ modDropped <-
 
 summary(modDropped)
 Anova(modDropped, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modLength) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+anova(modLength, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+```
 
+```{r, results=TRUE}
 ##ASSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modDropped)) #not normal
@@ -404,7 +491,11 @@ hist(residuals(modDropped))
 # 2. Equal variances
 leveneTest(residuals(modDropped)~resultsDropped$Treatment) # barely pass
 plot(fitted(modDropped),resid(modDropped,type="pearson"),col="blue")
+```
 
+Analysis does not meet assumptions. Attempt a square root transformation.  
+
+```{r, results=TRUE}
 ##DOES NOT MEET ASSUMPTIONS so ATTEMPT AT Transformation:
 resultsDropped$tdata<-(resultsDropped$SpineCount)^1/2
   # transformation
@@ -423,10 +514,16 @@ plot(fitted(modDropped1),resid(modDropped1,type="pearson"),col="blue")
 
 summary(modDropped1)
 Anova(modDropped1, type=2) #test for significance of model
+```
 
+Transfomraiton was not successful, so we use a non parametric Kruskal Wallis Test.  
+```{r, results=TRUE}
 ### Transformations not work, so use non parametric:
 kruskal.test(resultsDropped$SpineCount~resultsDropped$Treatment)# SIG*** (p=0.0005563)
+```
 
+Conduct Dunn Post Hoc Test and display interaction plot. 
+```{r, results=TRUE}
 ### POST HOC Pairwise ######
 dunn <- 
   resultsDropped %>% 

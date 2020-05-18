@@ -1,13 +1,20 @@
 ---
 title: "Plots for growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
 author: "Emily Sesno"
-output: html_document
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+    smart: false
+  pdf_document:
+    keep_tex: yes
 ---
 
 ```{r setup, include=FALSE}
 rm(list=ls(all=TRUE))
-setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
-results <- read.csv("Urchin_ClimateChange_Data.csv", header=T, na="NA")
+results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na="NA")
 
 library("tidyverse")
 library("lme4") #linear mixed modeling
@@ -18,24 +25,19 @@ library("emmeans") #post-hoc tests
 library("lsmeans") #post-hoc tests
 library("plotrix") #calculate std.error
 library("dplyr") 
-
-
 ```
 
 ## Methods
 
-### Statistical Analyses
+### Statistical Analyses (see analysis script)  
 
 Residuals were checked for normality and confirmed with the Shapiro-Wilk test and homogeniety of variance was confirmed using Levene’s test. Temperature and pH treatment condition data were not normal, so were analyzed using a Kruskal-Wallis test. Effect of temperature and pH treatments on growth (%), calcification ratio, and relative spine length (% of TD) were analyzed using linear mixed effects models in the lme4 package (Bates, et al. 2015) in R Statistical Programming (R Core Team, 2018). Temperature and pH were included as fixed factors with individual urchin included as a random effect. Significance of effects was determined using a type II analysis of variance (ANOVA) producing a deviance table with Wald chi-square tests in the car package (Fox et al. 2019). Alpha was set to 0.05 for all analyses. Analysis of dropped spines was conducted using a Kruskal-Wallis test (Alexis Dinno, 2017) as the normality assumption was violated. Data visualization and analysis was conducted using the programs JMP® Pro 13.1.0 (SAS Institute Inc., 2019) and R Version 1.2.1335 (R Core Team, 2018).
 
-
-
-## Results
+## Results  
 
 ### Treatment Conditions
 	
-The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24) (Fig. 3.1a). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24) (Fig. 3.1b). 
-
+The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24). 
 
 ```{r Environmental Plots: Temperature, echo = FALSE}
 
@@ -415,8 +417,7 @@ results %>%
 
 ```{r Spine Steroem Organization, echo = FALSE}
 
-setwd("/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Data")
-structure <- read.csv("Urchin_ClimateChange_Structure.csv", header=T, na="NA")
+structure <- read.csv("Data/Urchin_ClimateChange_Structure.csv", header=T, na="NA")
 
 structure %>% 
   select("Temperature", "pH", "PcntUnorganized") %>% 
