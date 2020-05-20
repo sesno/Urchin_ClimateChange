@@ -1,6 +1,6 @@
 **Study:** Analysis for Growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: Effects of Warming and Acidification.
 
-**Authors:** E Sesno, AS Huffmyer, J Lemus
+**Authors:** E Sesno, AS Huffmyer, K Bahr, J Lemus
 
 **Corresponding Author:** E Sesno, Sesno@hawaii.edu
 
