@@ -41,11 +41,13 @@ The achieved conditions of header tanks were not different between the same temp
 
 ```{r Environmental Plots: Temperature, echo = FALSE}
 
+#this doesn't work - group_by is not working and it's not recognizing temperature columns - why is this? 
+
 results %>% 
   select("Day", "Temperature", "Temp") %>%
   drop_na(Temp) %>%
   group_by(Day, Temperature) %>%
-  mutate(meanT = mean(Temp)) %>%
+  summarise(meanT = mean(Temp)) %>%
   group_by(Temperature) %>% 
   mutate(se = std.error(Temp)) %>%
   

@@ -258,7 +258,6 @@ Assemble data.
 ```{r Calcification tip, results=FALSE}
 ### Model 1: calcification at the tips of spines
 
-
 resultsTip <- 
   #create data using only the SEM images of the tips of spines.
   results %>% 
