@@ -47,7 +47,7 @@ results %>%
   select("Day", "Temperature", "Temp") %>%
   drop_na(Temp) %>%
   group_by(Day, Temperature) %>%
-  summarise(meanT = mean(Temp)) %>%
+  mutate(meanT = mean(Temp)) %>%
   group_by(Temperature) %>% 
   mutate(se = std.error(Temp)) %>%
   
