@@ -16,6 +16,8 @@ Urchin_ClimateChange_Plots.Rmd - Result plots of urchin responses
 
 Urchin_ClimateChange_Analysis.Rmd - Analysis of urchin responses
 
+ImageJ_macro.txt - ImageJ macro for converting spine cross-sections to binary and calculate calcification ratio.
+
 **Data Files**
 
 Urchin_ClimateChange_Data.csv - All corresponding data from duration of the experiment.
@@ -23,6 +25,7 @@ Urchin_ClimateChange_Data.csv - All corresponding data from duration of the expe
 Urchin_ClimateChange_Structure.csv - Categorization of SEM cross-section images of spine bases as organized or disorganized. Quantified patterned vs. not patterned to look for trend between treatments. 
 
 Date_CO2Sys.xls - CO2Sys seawater parameters calculations for a given week of water sampling.
+
 
 **Variables explained**
 
