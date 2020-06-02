@@ -14,7 +14,7 @@ output:
 
 ```{r setup, include=FALSE}
 rm(list=ls(all=TRUE))
-results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na="NA")
+results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na.strings="NA")
 
 library("tidyverse")
 library("lme4") #linear mixed modeling
@@ -63,7 +63,7 @@ ggplot(aes(Day, meanT, color = Temperature, shape = Temperature)) +
     scale_color_manual(name = NULL,
                        values = c("gray40", "firebrick3"),
                        labels = c("Ambient Temp", "High Temp")) +
-    theme_bw() +
+    theme_classic() +
     theme(legend.margin = margin(0), 
           legend.position = c(.98,.8), 
           legend.justification = c("right", "top"),
@@ -75,6 +75,45 @@ ggplot(aes(Day, meanT, color = Temperature, shape = Temperature)) +
        #width = 7, height = 5)
 
 ```
+
+Alternate plot format with different formatting and using standard error calculated with the sample size as the number of tanks (12 per treatment) rather than sample size as the number of recorded measurements. This is a more accurate view of the variability in your tank system.  
+
+```{r, results=TRUE}
+
+results %>% 
+  select("Day", "Temperature", "Temp") %>%
+  drop_na(Temp) %>%
+  group_by(Day, Temperature) %>%
+  mutate(meanT = mean(Temp)) %>%
+  group_by(Temperature) %>% 
+  mutate(sd = sd(Temp)) %>%
+  mutate(se = sd/sqrt(12)) %>%
+  
+  
+ggplot(aes(Day, meanT, color = Temperature)) +
+    geom_point(size = 2.5, show.legend=FALSE) +
+    geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
+    geom_line(size=1.2) +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Ambient", "High"))+
+    scale_color_manual(name = NULL,
+                       values = c("gray40", "firebrick3"),
+                       labels = c("Ambient", "High")) +
+    ggtitle("A")+
+    theme_classic() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14, face="bold"))
+```
+
+
 
 ```{r Environmental Plots: pH, echo = FALSE}
 
@@ -117,6 +156,44 @@ results %>%
 **Figure 3.1.** Temperature (a) and pH (b) conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen. Days prior to 0 indicate the acclimation and conditioning period.
 
 
+Alternate plot format: Same changes as for temp above.  
+
+```{r, results=TRUE}
+
+results %>% 
+  select("Day","pH", "pHspec") %>%
+  drop_na(pHspec) %>%
+  group_by(Day, pH) %>%
+  mutate(meanpH = mean(pHspec)) %>%
+  group_by(pH, meanpH) %>% 
+  mutate(sd = sd(pHspec)) %>%
+  mutate(se = sd/sqrt(12)) %>%
+  
+  
+ggplot(aes(Day, meanpH, color = pH)) +
+    geom_point(size = 2.5, show.legend=FALSE) +
+    geom_errorbar(aes(ymin = meanpH-sd, ymax = meanpH+sd)) +
+    geom_line(size=1.2) +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Low pH", "High pH"))+
+    scale_color_manual(name = NULL,
+                       values = c("skyblue3", "gray40"),
+                       labels = c("Acidified", "Ambient")) +
+    ggtitle("B")+
+    theme_classic() +
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14, face="bold"))
+```
+
+
 ```{r growth by treatment, echo = FALSE}
 #### Growth Across Treatments
 
@@ -152,6 +229,94 @@ results %>%
 ```
 
 **Figure.** Growth (%) in treatment conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen.
+
+Alternate plot format: This is an interaction plot. I have done a plot with the axes flipped so you can see which one gets your point across. One emphasizes temp while the other emphasizes pH.  
+
+pH on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  filter(Day==126) %>%
+  select("Temperature","pH","Growth") %>%
+  drop_na(Growth) %>% 
+  mutate(meanPct = Growth*100) %>%
+  group_by(Temperature, pH) %>%
+  summarise(mean = mean(meanPct), 
+            se = std.error(meanPct)) %>%
+   
+  
+  ggplot(aes(x=pH, y=mean, color = Temperature, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=Temperature),  position=position_dodge(0.1)) +
+    xlab("pH Treatment") +
+    ylab("Total Growth (%)")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "acidified"), 
+                     label=c("Ambient", "Acidified"))+
+    scale_colour_manual(name = "Temperature",
+                        values = c("gray40", "firebrick3"),
+                        labels = c("Ambient", "High")) +
+    ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+#ggsave("TreatmentGrowth.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+Temp on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  filter(Day==126) %>%
+  select("Temperature","pH","Growth") %>%
+  drop_na(Growth) %>% 
+  mutate(meanPct = Growth*100) %>%
+  group_by(Temperature, pH) %>%
+  summarise(mean = mean(meanPct), 
+            se = std.error(meanPct)) %>%
+   
+  
+  ggplot(aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Total Growth (%)")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Ambient", "Acidified")) +
+    ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+#ggsave("TreatmentGrowth.png", 
+      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
+      #width = 7, height = 5)
+
+```
+
+
 
 ### Effect on Growth
 
@@ -237,8 +402,6 @@ There was no significant effect of temperature (p=0.387), pH (p=0.437), or the i
 
 
 ```{r Treatment Ratio, echo = FALSE}
-
-
 results %>% 
   select("Treatment","RatioSEM", "PartOfSpine") %>%
   drop_na(RatioSEM) %>% 
@@ -303,12 +466,91 @@ results %>%
 
 **Figure 3.3.** Effect of temperature and pH on the calcification ratio at the base (a) and tip (b) of spine cross-sections. Letters indicate significant difference in post hoc pairwise tests. Data are means ± standard error (s.e.), n = 14-18.
 
+
+
+Alternate plot format: Making interaction plots as done above for growth.  
+
+Temp on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  drop_na(RatioSEM) %>% 
+  group_by(Temperature, pH, PartOfSpine) %>%
+  summarize(mean = mean(RatioSEM), se = std.error(RatioSEM)) %>%
+
+  ggplot(aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    facet_wrap(~PartOfSpine)+
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Calcification Ratio")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Ambient", "Acidified")) +
+    #ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+
+pH on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  drop_na(RatioSEM) %>% 
+  group_by(Temperature, pH, PartOfSpine) %>%
+  summarize(mean = mean(RatioSEM), se = std.error(RatioSEM)) %>%
+
+  ggplot(aes(x=pH, y=mean, color = Temperature, group=interaction(Temperature,pH))) +
+    facet_wrap(~PartOfSpine)+
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=Temperature),  position=position_dodge(0.1)) +
+    xlab("pH Treatment") +
+    ylab("Calcification Ratio")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "acidified"), 
+                     label=c("Ambient", "Acidified"))+
+    scale_colour_manual(name = "Temperature Treatment",
+                        values = c("gray40", "firebrick3"),
+                        labels = c("Ambient", "High")) +
+    #ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+
+
 ### Effect on Relative Spine Length
 
 Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length (Fig. 3.4). 
 
 
-```{r Relative Spine Lengths, echo = FALSE}
+```{r Relative Spine Lengths, echo = FALSE, warning=FALSE}
 
 results %>% 
   select("Temperature","pH","RatioLength", "Chosen") %>%
@@ -346,6 +588,84 @@ results %>%
 ```
 
 **Figure 3.4.** Effect of temperature and pH on the relative spine lengths. Data are means ± standard error (s.e.), n = 51.
+
+
+Alternate plot format: Making interaction plots as done above for growth.  
+
+Temp on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","RatioLength", "Chosen") %>%
+  drop_na(RatioLength) %>%
+  mutate(Ratio = RatioLength/2) %>% 
+  filter(Chosen == "yes") %>% 
+  group_by(Temperature, pH) %>%
+  summarize(mean = mean(Ratio), se = std.error(Ratio)) %>%
+
+  ggplot(aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Relative Spine Lengths")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    ylim(10,20) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Ambient", "Acidified")) +
+    #ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+pH on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","RatioLength", "Chosen") %>%
+  drop_na(RatioLength) %>%
+  mutate(Ratio = RatioLength/2) %>% 
+  filter(Chosen == "yes") %>% 
+  group_by(Temperature, pH) %>%
+  summarize(mean = mean(Ratio), se = std.error(Ratio)) %>%
+
+  ggplot(aes(x=pH, y=mean, color = Temperature, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=Temperature),  position=position_dodge(0.1)) +
+    xlab("pH Treatment") +
+    ylab("Relative Spine Lengths")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    ylim(10,20) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "acidified"), 
+                     label=c("Ambient", "Acidified"))+
+    scale_colour_manual(name = "Temperature Treatment",
+                        values = c("gray40", "firebrick3"),
+                        labels = c("Ambient", "High")) +
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
 
 ### Effect on Spine Dropped
 
@@ -387,8 +707,81 @@ results %>%
 
 **Figure 3.5.** Effect of temperature and pH on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6  
 
-```{r Dropped Spine by Treatment, echo = FALSE}
+Alternate plot format: 
 
+Temp on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","SpineCount") %>%
+  drop_na(SpineCount) %>% 
+  group_by(Temperature, pH) %>%
+  summarize(mean = mean(SpineCount), se = std.error(SpineCount)) %>%
+
+  ggplot(aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Dropped Spines")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+   # ylim(10,20) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Ambient", "Acidified")) +
+    #ylim(250,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+
+pH on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+results %>% 
+  select("Temperature","pH","SpineCount") %>%
+  drop_na(SpineCount) %>% 
+  group_by(Temperature, pH) %>%
+  summarize(mean = mean(SpineCount), se = std.error(SpineCount)) %>%
+
+  ggplot(aes(x=pH, y=mean, color = Temperature, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=Temperature),  position=position_dodge(0.1)) +
+    xlab("pH Treatment") +
+    ylab("Dropped Spines")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "acidified"), 
+                     label=c("Ambient", "Acidified"))+
+    scale_colour_manual(name = "Temperature Treatment",
+                        values = c("gray40", "firebrick3"),
+                        labels = c("Ambient", "High")) +
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+
+```{r Dropped Spine by Treatment, echo = FALSE}
 
 results %>% 
   select("Treatment","SpineCount") %>%
@@ -416,6 +809,7 @@ results %>%
 ```
 
 **Figure.** Effect of treatment on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6 
+
 
 ```{r Spine Steroem Organization, echo = FALSE}
 
@@ -448,3 +842,74 @@ structure %>%
 
 **Figure.** Effect of temperature and pH on the percent of bases with an unorganized steorom structure. (n = 17-18)
 
+
+Alternate plot format: 
+
+Temp on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+structure <- read.csv("Data/Urchin_ClimateChange_Structure.csv", header=T, na="NA")
+
+structure %>% 
+  select("Temperature", "pH", "PcntUnorganized") %>% 
+  drop_na(PcntUnorganized) %>% 
+
+  ggplot(aes(x=Temperature, y=PcntUnorganized, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Percent Unorganized")+
+    #geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    ylim(0,100) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("Ambient", "Heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Ambient", "Acidified")) +
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
+
+
+pH on x axis: 
+```{r growth by treatment, echo = FALSE}
+#### Growth Across Treatments
+
+structure %>% 
+  select("Temperature", "pH", "PcntUnorganized") %>% 
+  drop_na(PcntUnorganized) %>% 
+
+  ggplot(aes(x=pH, y=PcntUnorganized, color = Temperature, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=Temperature),  position=position_dodge(0.1)) +
+    xlab("pH Treatment") +
+    ylab("Percent Unorganized")+
+    ylim(0,100)+
+    #geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("Ambient", "Acidified"), 
+                     label=c("Ambient", "Acidified"))+
+    scale_colour_manual(name = "Temperature Treatment",
+                        values = c("gray40", "firebrick3"),
+                        labels = c("Ambient", "High")) +
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"))
+
+
+```
