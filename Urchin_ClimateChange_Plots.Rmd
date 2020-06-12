@@ -40,44 +40,6 @@ Residuals were checked for normality and confirmed with the Shapiro-Wilk test an
 	
 The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24). 
 
-```{r, echo = FALSE}
-
-#this doesn't work - group_by is not working and it's not recognizing temperature columns - why is this? 
-
-results %>% 
-  select("Day", "Temperature", "Temp") %>%
-  drop_na(Temp) %>%
-  group_by(Day, Temperature) %>%
-  mutate(meanT = mean(Temp)) %>%
-  group_by(Temperature) %>% 
-  mutate(se = std.error(Temp)) %>%
-  
-  
-ggplot(aes(Day, meanT, color = Temperature, shape = Temperature)) +
-    geom_point(size = 2.5) +
-    geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
-    geom_line() +
-    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
-    scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
-    scale_shape_discrete(name = NULL,
-                         labels = c("Ambient Temp", "High Temp")) +
-    scale_color_manual(name = NULL,
-                       values = c("gray40", "firebrick3"),
-                       labels = c("Ambient Temp", "High Temp")) +
-    theme_classic() +
-    theme(legend.margin = margin(0), 
-          legend.position = c(.98,.8), 
-          legend.justification = c("right", "top"),
-          legend.background = element_blank()) + 
-    annotate("text", x = 127, y = 29.5, label = "(a)")
-
-#ggsave("TempOverTime.png", 
-       #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
-       #width = 7, height = 5)
-
-```
-
-Alternate plot format with different formatting and using standard error calculated with the sample size as the number of tanks (12 per treatment) rather than sample size as the number of recorded measurements. This is a more accurate view of the variability in your tank system.  
 
 ```{r, results=TRUE}
 
@@ -104,7 +66,7 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
                        labels = c("Ambient", "High")) +
     ggtitle("")+
     theme_classic() +
-    theme(plot.margin=unit(c(0.2,0.2,0.2,0.2), "cm"))+
+    theme(plot.margin=unit(c(0.3,0.6,0.3,0.3), "cm"))+
     theme(legend.margin = margin(0), 
           legend.position = c(.98,.8), 
           legend.justification = c("right", "top"),
@@ -114,51 +76,6 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
           plot.title = element_text(size=16, face="bold"),
           legend.text = element_text(size=14, face="bold"));tempplot
 ```
-
-
-
-```{r, echo = FALSE}
-
-results %>% 
-  select("Day","pH", "pHspec") %>%
-  drop_na(pHspec) %>%
-  group_by(Day, pH) %>%
-  mutate(meanpH = mean(pHspec)) %>%
-  group_by(pH, meanpH) %>% 
-  mutate(se = std.error(pHspec)) %>%
-
- ggplot(aes(Day, meanpH, color = pH, shape = pH)) +
-    geom_point(size = 2.5) +
-    geom_errorbar(aes(ymin = meanpH-se, ymax = meanpH+se)) +
-    geom_line() +
-    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
-    scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
-    scale_shape_discrete(name = NULL,
-                         labels = c("Low pH", "Ambient pH"),
-                         guide = guide_legend(reverse = TRUE)) +
-    scale_color_manual(name = NULL,
-                       values = c("skyblue3", "gray40"),
-                       labels = c("Low pH", "Ambient pH"),
-                       guide = guide_legend(reverse = TRUE)) +
-    theme_bw() +
-    theme(legend.margin = margin(0), 
-          legend.position = c(.98,.8), 
-          legend.justification = c("right", "top"),
-          legend.background = element_blank()) +
-    annotate("text", x = 127, y = 8.01, label = "(b)")
-
-#ggsave("pHOverTime.png", 
-      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
-      #width = 7, height = 5)
-
-
-
-```
-
-**Figure 3.1.** Temperature (a) and pH (b) conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen. Days prior to 0 indicate the acclimation and conditioning period.
-
-
-Alternate plot format: Same changes as for temp above.  
 
 ```{r, results=TRUE}
 
@@ -182,10 +99,11 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
                          labels = c("Low pH", "High pH"))+
     scale_color_manual(name = NULL,
                        values = c("skyblue3", "gray40"),
-                       labels = c("Acidified", "Ambient")) +
+                       labels = c("Acidified", "Ambient"),
+                       guide = guide_legend(reverse = TRUE)) +
     ggtitle("")+
     theme_classic() +
-    theme(plot.margin=unit(c(0.2,0.2,0.2,0.2), "cm"))+
+    theme(plot.margin=unit(c(0.3,0.6,0.3,0.3), "cm"))+
     theme(legend.margin = margin(0), 
           legend.position = c(.98,.8), 
           legend.justification = c("right", "top"),
@@ -196,51 +114,20 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
           legend.text = element_text(size=14, face="bold"));pHplot
 ```
 
-This is where we would use 
+
 ```{r, results=TRUE}
-treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("A", "B"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
+
+#Make plots in horizontal line with proper labeling of A and B
+
+treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
 
 ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
 
 ```
 
-### Growth    
+**Figure 3.1.** Temperature (a) and pH (b) conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen. Days prior to 0 indicate the acclimation and conditioning period.
 
-```{r, echo = FALSE}
-#### Growth Across Treatments
 
-results %>% 
-  select("Day", "Treatment","Temperature","pH","Growth") %>%
-  drop_na(Growth) %>% 
-  group_by(Day, Treatment) %>%
-  mutate(se = (std.error(Growth))*100) %>%
-  mutate(meanPct = (mean(Growth)*100)) %>% 
-
-  
-  ggplot(aes(Day, meanPct, shape = Treatment, color = Treatment)) +
-    geom_point(size = 2.5) +
-    geom_line() +
-    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
-    scale_y_continuous(name="Growth (%)", breaks = seq(0,400, by = 25)) +
-    geom_errorbar(aes(ymin = meanPct-se, ymax = meanPct+se, width = 1.5)) +
-    theme_bw() + 
-    scale_shape_discrete(name = NULL,
-                         labels = c("Amb T, Amb pH", "Amb T, Low pH", "High T, Amb pH", "High T, Low pH")) +
-    scale_colour_manual(name = NULL,
-                        values = c("gray40", "skyblue3", "firebrick3","mediumpurple3"),
-                        labels = c("Amb T, Amb pH", "Amb T, Low pH", "High T, Amb pH", "High T, Low pH")) +
-    theme(legend.margin = margin(0), 
-          legend.position = c(.01, .99), 
-          legend.justification = c("left", "top"),
-          legend.background = element_blank())
-
-#ggsave("TreatmentGrowth.png", 
-      #path = "/Users/emilysesno/Desktop/Emily/Graduate Work/Urchin_ClimateChange/Figures",
-      #width = 7, height = 5)
-
-```
-
-**Figure.** Growth (%) in treatment conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen.
 
 Alternate plot format: This is an interaction plot. I have done a plot with the axes flipped so you can see which one gets your point across. One emphasizes temp while the other emphasizes pH.  
 
