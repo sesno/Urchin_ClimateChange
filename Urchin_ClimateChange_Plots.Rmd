@@ -25,7 +25,7 @@ library("emmeans") #post-hoc tests
 library("lsmeans") #post-hoc tests
 library("plotrix") #calculate std.error
 library("dplyr") 
-library("cowplot")
+library("cowplot") #grid plotting 
 ```
 
 ## Methods
