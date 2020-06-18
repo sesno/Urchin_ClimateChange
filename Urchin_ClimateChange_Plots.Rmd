@@ -159,7 +159,8 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
                      label=c("Ambient", "High"))+
     scale_colour_manual(name = "pH Treatment",
                         values = c("skyblue3", "gray40"),
-                        labels = c("Ambient", "Acidified")) +
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=125, label="p(pH)=0.61", size=6, color="darkgray") + 
     geom_text(x=1.5, y=100, label="p(Temperature)=0.04", size=6, color="black") + 
     geom_text(x=1.5, y=75, label="p(Interaction)=0.47", size=6, color="darkgray") + 
@@ -173,7 +174,7 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));growthplot
 
-#ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
 
 ```
 
@@ -208,7 +209,8 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
                      label=c("Ambient", "High"))+
     scale_colour_manual(name = "pH Treatment",
                         values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient")) +
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=1.6, label="p(pH)=0.002", size=6, color="black") + 
     geom_text(x=1.5, y=1.4, label="p(Temperature)=0.16", size=6, color="darkgray") + 
     geom_text(x=1.5, y=1.2, label="p(Interaction)=0.54", size=6, color="darkgray") + 
@@ -243,12 +245,13 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
                      label=c("Ambient", "High"))+
     scale_colour_manual(name = "pH Treatment",
                         values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient")) +
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=3.0, label="p(pH)=0.44", size=6, color="darkgray") + 
     geom_text(x=1.5, y=2.8, label="p(Temperature)=0.39", size=6, color="darkgray") + 
     geom_text(x=1.5, y=2.6, label="p(Interaction)=0.09", size=6, color="darkgray") + 
     theme_classic()+
-    theme(legend.position = "none", #removed the legend for the tip, so when we align them horizontally we only have one legend.
+    theme(legend.position = "none", #removed the legend for the tip, so when we align them horizontally we only have one legend. But need to adjust the size so it is the same as base
           legend.background = element_blank(), 
           axis.title = element_text(size = 16, face="bold"),
           axis.text = element_text(size = 14), 
@@ -256,7 +259,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));tipplot
 
-#ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
 ```
 
 ```{r, results=TRUE}
@@ -303,7 +306,8 @@ length_summary<-results %>%
                      label=c("Ambient", "High"))+
     scale_colour_manual(name = "pH Treatment",
                         values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient")) +
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
     #ylim(250,450)+
     theme_classic()+
     theme(legend.position = "right", 
@@ -344,7 +348,8 @@ droppedsummary<-results %>%
                      label=c("Ambient", "High"))+
     scale_colour_manual(name = "pH Treatment",
                         values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient")) +
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=11, label="p(pH)<0.001", size=6, color="black") + 
     geom_text(x=1.5, y=9, label="p(Temperature)=0.91", size=6, color="darkgray") + 
     geom_text(x=1.5, y=7, label="p(Interaction)=0.83", size=6, color="darkgray") +
@@ -361,43 +366,3 @@ ggsave(filename="Figures/20200611/DroppedSpinesFig.png", plot=dropplot, dpi=300,
 ```
 
 **Figure 3.5.** Effect of temperature and pH on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6  
-
-
-
-### Spine Organizational Structure
-
-```{r, echo = FALSE}
-
-
-structure <- read.csv("Data/Urchin_ClimateChange_Structure.csv", header=T, na="NA")
-
-structure %>% 
-  select("Temperature", "pH", "PcntUnorganized") %>% 
-  drop_na(PcntUnorganized) %>% 
-
-  ggplot(aes(x=Temperature, y=PcntUnorganized, color = pH, group=interaction(Temperature,pH))) +
-    geom_point(size = 3,  position=position_dodge(0.1)) +
-    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
-    xlab("Temperature Treatment") +
-    ylab("Percent Unorganized")+
-    #geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
-    ylim(0,100) +
-    theme_bw() + 
-    scale_x_discrete(limits=c("Ambient", "Heated"), 
-                     label=c("Ambient", "High"))+
-    scale_colour_manual(name = "pH Treatment",
-                        values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient")) +
-    theme_classic()+
-    theme(legend.position = "right", 
-          legend.background = element_blank(), 
-          axis.title = element_text(size = 16, face="bold"),
-          axis.text = element_text(size = 14), 
-          plot.title = element_text(size=16, face="bold"),
-          legend.text = element_text(size=14), 
-          legend.title = element_text(size=16, face="bold"))
-
-
-```
-
-**Figure 3.6** Effect of temperature and pH on the percent of bases with an unorganized steorom structure. (n = 17-18)

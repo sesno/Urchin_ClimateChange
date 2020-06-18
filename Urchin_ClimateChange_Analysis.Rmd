@@ -1,5 +1,5 @@
 ---
-title: "Analysis for Growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
+title: "Analysis for Growth and calcification response of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
 author: "Emily Sesno"
 output:
   html_document:
