@@ -118,7 +118,7 @@ modGrow <-
 
 summary(modGrow)
 Anova(modGrow, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modGrow) #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+
 anova(modGrow, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
 ```
 
