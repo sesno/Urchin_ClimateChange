@@ -168,7 +168,7 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
                         labels = c("Acidified", "Ambient"),
                         guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=125, label="p(pH)=0.61", size=6, color="darkgray") + 
-    geom_text(x=1.5, y=100, label="p(Temperature)=0.04", size=6, color="black") + 
+    geom_text(x=1.5, y=100, label="p(Temperature)=0.06", size=6, color="darkgray") + 
     geom_text(x=1.5, y=75, label="p(Interaction)=0.47", size=6, color="darkgray") + 
     ylim(0,450)+
     theme_classic()+

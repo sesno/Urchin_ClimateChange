@@ -36,6 +36,7 @@ library("effsize")
 library("FSA")
 library("rcompanion")
 library("broom") #turns model output into data frames
+library("plotrix") #Calculates standard error of the mean
 ```
 
 ## Analysis approach:  
@@ -45,6 +46,47 @@ library("broom") #turns model output into data frames
 4. Look at model summary  
 5. Run anova to check for significance of main effects  
 6. Run post-hoc to test hypotheses  
+
+```{r Mean Results=TRUE}
+
+###attempt to calculate means and ANOVAs for other means from paper. Will try to make a table too :) https://rfortherestofus.com/2019/11/how-to-make-beautiful-tables-in-r/
+
+##Means of Day-24 sizes
+InitialDiameter <-
+  #seperate out the initial sizes of urchins on day 1, when desired conditions were met.
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
+    filter(Day == "-24") %>% 
+      #sizes on day -24  
+    select("Diameter")
+
+InitialMean <- mean(InitialDiameter$Diameter)
+InitialSE <- std.error(InitialDiameter$Diameter)
+
+## Means of Day1 Sizes
+Day1Diameter <-
+  #seperate out the initial sizes of urchins on day 1, when desired conditions were met.
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
+    filter(Day == "1") %>% 
+      #sizes on day 1  
+    select("Diameter")
+
+Day1Mean <- mean(Day1Diameter$Diameter)
+Day1SE <- std.error(Day1Diameter$Diameter)
+
+```
+
 
 ## Growth  
 
@@ -74,6 +116,8 @@ Initial <-
     filter(Day == "1") %>% 
       #sizes on day 1  
     select("Temperature", "pH", "Diameter", "TankID")
+  mean(Initial$Diameter)
+  std.error(Initial$Diameter)
 
 
 Final <- 
@@ -117,7 +161,6 @@ modGrow <-
 #Need to decide on model type that we want to use. 
 
 summary(modGrow)
-Anova(modGrow, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
 
 anova(modGrow, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
 ```
@@ -149,7 +192,7 @@ interaction.plot(resultsGrow$Temperature,resultsGrow$pH,resultsGrow$Growth,
 
 ### Initial as day -13
 
-Model growth as the day conditions began to ramp up.  
+Model growth using the start  as the day conditions began to ramp up.  
 ```{r, results=FALSE}
 
 ### GROWTH MODEL 2: If run the same model using day -13 as the first technical day of the experiment. This is the day conditions began to ramp up, so urchins were experiencing gradual increase of stressors.
@@ -166,7 +209,9 @@ Initial1 <-
       #gather Diam1 and Diam2 into single column
     filter(Day == "-13") %>%  
       #filter for day at -13 to use this as the intial size.
-    select("Temperature", "pH", "Diameter", "TankID")
+    select("Temperature", "pH", "Diameter", "TankID") %>% 
+  mean(Initial1$Diameter)
+  std.error(Initial1$Diameter)
 
 
 Final1 <- 
@@ -211,8 +256,6 @@ modGrow1 <-
 
 summary(modGrow1)
 
-#need to pick anova method
-Anova(modGrow1, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
 anova(modGrow1, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
 ```
 
@@ -276,8 +319,8 @@ modTip <-
   lmer(RatioSEM ~ Temperature * pH + (1|TankID), data = .)
 
 summary(modTip)
-Anova(modTip, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II or type-III analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
-anova(modTip, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type III Analysis of Variance Table with Satterthwaite's method.
+Anova(modTip, type=2) #Anova{car}. Produces Analysis of Deviance Table (Type II Wald chisquare tests). Calculates type-II analysis-of-variance tables for model objects produced by lmer in the lme4 package. As implemented here, type-II Wald tests are a generalization of the linear hypotheses used to generate these tests in linear models.
+anova(modTip, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
 ```
 
 Check assumptions.  
