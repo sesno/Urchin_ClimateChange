@@ -40,9 +40,42 @@ Residuals were checked for normality and confirmed with the Shapiro-Wilk test an
 	
 The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24). 
 
+ADJUST RESULTS TO REFLECT ANOVAS BELOW FOR TREATMENTS: 
 
 ```{r, results=TRUE}
+#temp between high and ambient temp
+summary(aov(Temp ~ Temperature, data=results)) #temperature was different between high and ambient treatment
 
+#pH between high and ambient co2
+summary(aov(pHspec ~ pH, data=results)) #pH was different between high and ambient co2 treatments
+
+#temp between headers in high
+aov1<- results %>%
+  filter(Temperature=="heated")
+
+summary(aov(Temp ~ as.factor(Header), data=aov1)) #not different between headers
+
+#temp between headers in ambient
+aov2<- results %>%
+  filter(Temperature=="ambient")
+
+summary(aov(Temp ~ as.factor(Header), data=aov2)) #not different between headers
+
+#pH between headers in high
+aov3<- results %>%
+  filter(pH=="acidified")
+
+summary(aov(pHspec ~ as.factor(Header), data=aov3)) #not different between headers
+
+#pH between headers in ambient
+aov4<- results %>%
+  filter(pH=="ambient")
+
+summary(aov(pHspec ~ as.factor(Header), data=aov4)) #not different between headers
+
+```
+
+```{r, results=TRUE}
 tempsummary<-results %>% 
   select("Day", "Temperature", "Temp") %>%
   drop_na(Temp) %>%
@@ -51,8 +84,7 @@ tempsummary<-results %>%
   group_by(Temperature) %>% 
   mutate(sd = sd(Temp)) %>%
   mutate(se = sd/sqrt(12)) 
-  
-  
+
 tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
     geom_point(size = 2.5, show.legend=FALSE) +
     geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
