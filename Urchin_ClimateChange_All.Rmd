@@ -41,6 +41,7 @@ library("effsize")
 library("FSA")
 library("rcompanion")
 library("broom") #turns model output into data frames
+library("kableExtra") #makes data tables easier to read
 library("tidyverse")
 ```
 
@@ -62,8 +63,12 @@ library("tidyverse")
     
 2. Urchin Diameters: 
     a. Calculate diameter means for:
-        i. Day -24 and 
-        ii. Day 1 and check for differences in urchin diameters from pH or 
+        i.  Day -24 
+        ii. Day -13
+        iii.Day 1
+        vi. Day 126
+        v.  Table 3: Diameter Means
+    b. Check for differences in urchin diameters from different tanks on Day 1
 
 3. Response Analyses:
     a. Growth (%)
@@ -82,19 +87,33 @@ library("tidyverse")
 
 ## 1. Environmental Conditions and Manipulations:
 ###  a. Calculate environmental means
-```{r}
+##### Table 1: Environmental Means
+```{r, message=FALSE, warning=FALSE}
 
 EnviroMean <- 
   results %>% 
-    select("Day", "Temperature", "pH", "Temp","pHspec") %>%
-    filter(Day >= "1") %>% 
+    select("Day", "Temperature", "pH", "Temp","pHspec", "pCO2out", "AlkTotal") %>%
+    filter(Day >= "1", Day <= "123") %>%
     drop_na(Day) %>% 
     group_by(Temperature, pH) %>% 
-    summarise(meanT = mean(Temp, na.rm = T)); EnviroMean
+    summarise(mean_T = mean(Temp, na.rm = T),
+              se_T = sd(Temp, na.rm = T)/sqrt(12),
+              mean_pH = mean(pHspec, na.rm = T), 
+              se_pH = sd(pHspec, na.rm = T)/sqrt(12),
+              mean_pCO2 = mean(pCO2out, na.rm = T), 
+              se_pCO2 = sd(pCO2out, na.rm = T)/sqrt(12),
+              mean_AlkTotal = mean(AlkTotal, na.rm = T),
+              se_AlkTotal = sd(AlkTotal, na.rm = T)/sqrt(12))
+
+EnviroMean %>% 
+  kbl(caption = "Table 1: Experimental treatments and environmental conditions (mean +/- standard error) of the 126-day experiment.") %>% 
+  kable_classic_2() %>% 
+  kable_styling(c("striped", "hover"), full_width = F, html_font= "Times New Roman")
+
 ```
 
-### b. Check environmental manipulations with ANOVAs for treatments 
-```{r}
+### b. Check environmental manipulations with ANOVAs
+```{r, results=FALSE, message=FALSE, warning=FALSE}
 
 Environmental <- 
   results %>% 
@@ -162,9 +181,25 @@ aov4<- Environmental %>%
 summary(aov(pHspec ~ as.factor(TankID), data=aov4)) #not different between headers
 
 ```
+##### Table 2: Results of ANOVA for environmental  
+Treatment Comparison  | Pr(>F)  
+--------------------- |----------
+Heated v. Ambient     | <0.001
+Acidified v. Ambient  | <0.001
+                      |
+Ambient temp headers  |  0.998
+Heated headers        |  0.842
+Ambient pH headers    |  0.129
+Acidified headers     |  0.150
+                      |
+Ambient temp tanks    |  1.000
+Heated tanks          |  0.999
+Ambient pH tanks      |  0.675
+Acidified tanks       |  0.888
+
 
 ### c. Figure 1: Temperature over time
-```{r}
+```{r, message=FALSE, warning=FALSE, results=FALSE}
 
 tempsummary<-results %>% 
   select("Day", "Temperature", "Temp") %>%
@@ -202,7 +237,8 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
 ```
 
 ### d. Figure 2: pH over time
-```{r}
+```{r, message=FALSE, warning=FALSE}
+
 pHsummary<-results %>% 
   select("Day","pH", "pHspec") %>%
   drop_na(pHspec) %>%
@@ -242,11 +278,23 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
 ```
 
 
+```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+#Make plots in horizontal line with proper labeling of a and b
+
+#treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
+
+#ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
+
+```
+
+
+
 ## 2. Urchin Diameters:
 ### a. Calculate diameter means
 #### i.  Day -24
-Assemble data for diameters of initial collection of urchins from hatchery
-```{r}
+Assemble data for diameters of initial collection of urchins from hatchery and calculate mean
+```{r, message=FALSE, warning=FALSE, results=FALSE}
 
 ##Initial Collection = Day -24
 InitialDiameter <-
@@ -264,37 +312,42 @@ InitialDiameter <-
 
 
 InitialMean <- mean(InitialDiameter$Diameter)
-InitialSE <- std.error(InitialDiameter$Diameter)
+InitialSE <- sd(InitialDiameter$Diameter)/sqrt(24)
 
 InitialMean
 InitialSE
 ```
 
-Results of linear mixed model effect of diameter (day -24)
-```{r}
-InitialMod <- lmer(Diameter ~ Temperature*pH + (1|TankID), data=InitialDiameter)
-anova(InitialMod, type = 2)
+#### ii. Day -13
+Assemble Data for diameters of acclimated urchins before conditioning and calculate mean
+```{r, message=FALSE, warning=FALSE, results=FALSE}
+##After acclimating before ramp up = Day-13
+
+AcclimatedDiameter <-
+  #seperate out the initial sizes of urchins on day -24, when desired conditions were met.
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
+    filter(Day == "-13") %>% 
+      #sizes on day -24  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+
+AcclimatedMean <- mean(AcclimatedDiameter$Diameter)
+AcclimatedSE <- sd(AcclimatedDiameter$Diameter)/sqrt(24) 
+
+AcclimatedMean
+AcclimatedSE
 ```
 
-Check assumptions of diameter model (day -24)
-```{r}
-#check assumptions
-# 1. Normality of residuals
-qqPlot(residuals(InitialMod)) 
-shapiro.test(residuals(InitialMod)) #no pass
-hist(residuals(InitialMod)) #eh
 
-
-# 2. Equal variances
-leveneTest(residuals(InitialMod)~InitialDiameter$Treatment) #No pass
-plot(fitted(InitialMod),resid(InitialMod,type="pearson"),col="blue")
-
-```
-
-
-#### ii. Day 1
+#### iii. Day 1
 Assemble Data for diameters on day 1 of experiment when desired conditions were reached
-```{r}
+```{r, message=FALSE, warning=FALSE, results=FALSE}
 ##After ramp up and desired conditions are reached to begin experiment = Day 1
 
 Day1Diameter <-
@@ -312,19 +365,56 @@ Day1Diameter <-
 
 
 Day1Mean <- mean(Day1Diameter$Diameter)
-Day1SE <- std.error(Day1Diameter$Diameter)
+Day1SE <- sd(Day1Diameter$Diameter)/sqrt(24)
 
+Day1Mean
+Day1SE
 
 ```
 
-Results of linear mixed model effect on diameter (day 1)
-```{r}
+#### iv. Day 126
+Assemble Data for diameters on day 126 of experiment after full growth
+```{r, message=FALSE, warning=FALSE, results=FALSE}
+##After ramp up and desired conditions are reached to begin experiment = Day 1
+
+Day126Diameter <-
+  #seperate out the initial sizes of urchins on day 1, when desired conditions were met.
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
+    filter(Day == "126") %>% 
+      #sizes on day 1  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+
+Day126Mean <- mean(Day126Diameter$Diameter)
+Day126SE <- sd(Day126Diameter$Diameter)/sqrt(23)
+
+Day126Mean
+Day126SE
+
+```
+
+##### v. Table 3: Urchin diameter means 
+Day  | Mean Urchin Diameter (mm) | se
+-----|---------------------------| -----
+-24  | 7.53                      | 0.15
+-13  | 10.38                     | 0.22
+1    | 16.03                     | 0.35
+126  | 70.52                     | 1.43
+
+### b. Results of linear mixed model effect on diameter (day 1)
+```{r, message=FALSE, warning=FALSE}
 Day1Mod <- lmer(Diameter ~ Temperature*pH + (1|TankID), data=Day1Diameter)
 anova(Day1Mod, type = 2)
 ```
 
 Check assumptions of diameter model (Day 1)
-```{r}
+```{r, message=FALSE, warning=FALSE, results=FALSE}
 #check assumptions
 # 1. Normality of residuals
 qqPlot(residuals(Day1Mod)) #not super normal but... see below
@@ -339,12 +429,11 @@ plot(fitted(Day1Mod),resid(Day1Mod,type="pearson"),col="blue")
 ```
 
 
-
 ## 3. Response Analysis
 ### a. Growth
 #### i. Growth Analysis
 Assemble data and calculate means using day 1 as initial diameter and calculate means
-```{r, echo = FALSE}
+```{r, message=FALSE, warning=FALSE}
 ### GROWTH MODEL 1: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
 
 Initial <-
@@ -404,7 +493,7 @@ resultsGrow %>%
 ```
 
 Growth linear mixed model results
-```{r}
+```{r, message=FALSE, warning=FALSE}
 #LMM for growth:
 modGrow <-
   resultsGrow %>% 
@@ -418,7 +507,7 @@ anova(modGrow, type="II") #anova{stats}.Compute analysis of variance (or devianc
 ```
 
 Check assumptions for growth model
-```{r}
+```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modGrow)) 
@@ -432,7 +521,7 @@ plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
 ```
 
 #### ii. Growth Interaction Plot 
-```{r, echo = FALSE}
+```{r, message=FALSE, warning=FALSE}
 
 growthsummary<-results %>% 
   filter(Day==126) %>%
@@ -480,7 +569,7 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
 #### i. Calcification Ratio Analysis at the tips
 
 Assemble data for chosen spine tips (distal end)
-```{r, Calcification tip, results=FALSE}
+```{r, message=FALSE, warning=FALSE}
 ### Model 1: calcification at the tips of spines
 
 resultsTip <- 
@@ -494,7 +583,7 @@ resultsTip <-
 ```
 
 Results for spine tips with linear mixed model
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 #LMM for calcification at the tips of spines 
 modTip <-
   resultsTip %>% 
@@ -506,7 +595,7 @@ anova(modTip, type="II") #anova{stats}.Compute analysis of variance (or deviance
 ```
 
 Check assumptions for calcification at tip model.  
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modTip)) #Normal
@@ -518,18 +607,10 @@ leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
 plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
 ```
 
-Conduct post hoc analysis on calcification at tip.  
-```{r, results=TRUE}
-## POST HOC ANALYSIS 
-emmTip <- emmeans(modTip, ~Temperature*pH, adjust = "tukey")  #Estimated marginal means (Least-squares means)
-multcomp::cld(emmTip) #create a compact letter display of all pair-wise comparisons
-pwpp(emmTip) #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
-```  
-
 
 #### ii. Calcification Ratio Analysis at the base
 Assemble data for chosen spine bases (proximal end)
-```{r, Calcification base}
+```{r, message=FALSE, warning=FALSE}
 
 ### Model 2: calcification in the base of the spines
 
@@ -544,7 +625,7 @@ resultsBase <-
 ```
 
 Results for spine bases with linear mixed model
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 #LMM for calcification at the tips of spines 
 modBase <- 
   resultsBase %>% 
@@ -555,7 +636,7 @@ anova(modBase, type="II") #anova{stats}.Compute analysis of variance (or devianc
 ```
 
 Check assumptions for calcification at base model. 
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modBase)) #Normal
@@ -567,21 +648,10 @@ leveneTest(residuals(modBase)~resultsBase$Treatment) #Pass
 plot(fitted(modBase),resid(modBase,type="pearson"),col="blue")
 ```
 
-Conduct post hoc analysis on calcification at base  
-```{r, results=TRUE}
-## POST HOC ANALYSIS 
-emmBase <- emmeans(modBase, ~Temperature*pH, adjust = "tukey")
-  #Estimated marginal means (Least-squares means)
-multcomp::cld(emmBase)
-  #create a compact letter display of all pair-wise comparisons
-pwpp(emmBase)
-  #Constructs a plot of P values associated with pairwise comparisons of estimated marginal means.
-```
-
 
 #### iii. Figure 4: Calcification Ratio Interaction Plot at tips and bases
 Make Interaction plots for calcification at the base and the tip
-```{r, echo = FALSE}
+```{r, message=FALSE, warning=FALSE}
 #### Tip and base calcification ratios
 
 #base
@@ -663,7 +733,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
 ```
 
 Combine both interaction plots at base and tip to be in horizontal line
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 
 #Make plots of calcification at tip and base in horizontal line with proper labeling of a and b
 #removed legend on the tip, so they can share the same one. But now they are different sizes...
@@ -678,7 +748,7 @@ calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nr
 ### c. Spine Loss
 #### i. Spine Loss Analysis:
 Assemble data for dropped spines  
-```{r, Dropped Spines}
+```{r, message=FALSE, warning=FALSE}
 
 ## Number of loose spines counted at the bottom of tanks at the end of the experiment. These were either broken or shed. Note: these spines were not collected, just counted, so can not determine whether they were broken or shed.
 
@@ -690,7 +760,7 @@ resultsDropped <-
 ```
 
 Analyse dropped spines with linear mixed effect model.  
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ##LM of dropped spines - can't make it LMM because error: number of levels of each grouping factor must be < number of observations - only have one count for each TankID.
 modDropped <- 
   resultsDropped %>% 
@@ -701,7 +771,7 @@ anova(modDropped) #anova{stats}.Compute analysis of variance (or deviance) table
 ```
 
 Check assumptions for model for dropped spines
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ##ASSUMPTIONS
 # 1. Normality of residuals
 qqPlot(residuals(modDropped)) #not normal
@@ -714,7 +784,7 @@ plot(fitted(modDropped),resid(modDropped,type="pearson"),col="blue")
 ```
 
 Analysis for dropped spines does not meet assumptions. Attempt a square root transformation.  
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ##DOES NOT MEET ASSUMPTIONS so ATTEMPT AT Transformation:
 resultsDropped$tdata<-(resultsDropped$SpineCount)^1/2
   # transformation
@@ -736,13 +806,13 @@ Anova(modDropped1, type=2) #test for significance of model
 ```
 
 Transfomraiton (of any usual kind) of dropped spines was not successful, so we use a non parametric Kruskal Wallis Test.  
-```{r, results=TRUE}
+```{r, results = FALSE, message=FALSE, warning=FALSE}
 ### Transformations not work, so use non parametric:
 kruskal.test(resultsDropped$SpineCount~resultsDropped$Treatment)# SIG*** (p=0.0005563)
 ```
 
 Conduct Dunn Post Hoc Test for dropped spines
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 ## POST HOC Pairwise
 dunn <- 
   resultsDropped %>% 
@@ -753,7 +823,7 @@ cldList(P.adj ~ Comparison, data = dunnph, threshold = 0.05)
 ```
 
 #### ii. Figure 5: Spine Loss Interaction Plot
-```{r, results=TRUE}
+```{r, message=FALSE, warning=FALSE}
 droppedsummary<-results %>% 
   select("Temperature","pH","SpineCount") %>%
   drop_na(SpineCount) %>% 
