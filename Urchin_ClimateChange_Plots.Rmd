@@ -28,17 +28,8 @@ library("dplyr")
 library("cowplot") #grid plotting 
 ```
 
-## Methods
-
-### Statistical Analyses (see analysis script)  
-
-Residuals were checked for normality and confirmed with the Shapiro-Wilk test and homogeniety of variance was confirmed using Levene’s test. Temperature and pH treatment condition data were not normal, so were analyzed using a Kruskal-Wallis test. Effect of temperature and pH treatments on growth (%), calcification ratio, and relative spine length (% of TD) were analyzed using linear mixed effects models in the lme4 package (Bates, et al. 2015) in R Statistical Programming (R Core Team, 2018). Temperature and pH were included as fixed factors with individual urchin included as a random effect. Significance of effects was determined using a type II analysis of variance (ANOVA) producing a deviance table with Wald chi-square tests in the car package (Fox et al. 2019). Alpha was set to 0.05 for all analyses. Analysis of dropped spines was conducted using a Kruskal-Wallis test (Alexis Dinno, 2017) as the normality assumption was violated. Data visualization and analysis was conducted using the programs JMP® Pro 13.1.0 (SAS Institute Inc., 2019) and R Version 1.2.1335 (R Core Team, 2018).
-
-## Results  
 
 ### Treatment Conditions
-	
-The achieved conditions of header tanks were not different between the same temperature and pH treatments, so were pooled with analysis of environmental conditions in the tanks. Temperatures were not significantly different among all ambient tanks (Chi square = 1.96; p = 0.9995, df = 12) and among all high temperature tanks (Chi square = 8.69; p = 0.7293, df = 12), but were different between ambient and high temperature tanks (Chi square = 148.13; p <0.0001, df = 24). Similarly, pH levels were not significantly different among all ambient tanks (Chi square = 19.60; p = 0.0750, df = 12) and all low pH tanks (Chi square = 13.54; p = 0.3310, df = 12), but were different between ambient and low pH tanks (Chi square = 323.46; p <0.0001, df = 24). 
 
 ADJUST RESULTS TO REFLECT ANOVAS BELOW FOR TREATMENTS: 
 
@@ -108,7 +99,7 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
           plot.title = element_text(size=16, face="bold"),
           legend.text = element_text(size=14, face="bold"));tempplot
 
-ggsave(filename="Figures/20200611/TempFig1.png", plot=tempplot, dpi=300, width=7, height=5, units="in")
+#ggsave(filename="Figures/20200611/TempFig1.png", plot=tempplot, dpi=300, width=7, height=5, units="in")
 
 ```
 
@@ -148,7 +139,7 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
           plot.title = element_text(size=16, face="bold"),
           legend.text = element_text(size=14, face="bold"));pHplot
 
-ggsave(filename="Figures/20200611/pHFig1.png", plot=pHplot, dpi=300, width=7, height=5, units="in")
+#ggsave(filename="Figures/20200611/pHFig1.png", plot=pHplot, dpi=300, width=7, height=5, units="in")
 
 ```
 
@@ -159,7 +150,7 @@ ggsave(filename="Figures/20200611/pHFig1.png", plot=pHplot, dpi=300, width=7, he
 
 treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
 
-ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
+#ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
 
 ```
 
@@ -167,8 +158,6 @@ ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=30
 
 
 ### Growth: 
-
-Test diameters were not significantly different among all urchins upon initial collection (mean = 7.54  0.29 mm; n=24; F3,20=0.851; p=0.4825) or after subsequent ramp-up of conditions (mean = 16.12  0.67 mm; n=24; F3,20=1.0907; p=0.3759). Increased temperatures significantly influenced growth (p = 0.042) while pH did not (p=0.611) (Fig. 3.2). Urchins grown in increased temperatures were 12 % larger than those in ambient conditions, regardless of pH. There was no interaction between temperature and pH (p=0.482) (Fig. 3.2).
 
 
 ```{r, echo = FALSE}
@@ -212,7 +201,7 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));growthplot
 
-ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
+#ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
 
 ```
 
@@ -220,9 +209,6 @@ ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, widt
 
 
 ### Calcification Ratio  
-
-There was no significant effect of temperature (p=0.387), pH (p=0.437), or the interaction of both (p=0.091) on the calcification ratio of cross-sections at the tips of T. gratilla spines. At the base of the spines, pH contributed to a significant reduction of the calcification ratio (p=0.002) while temperature did not (p=0.164). Calcification ratios were 16% lower in acidified conditions, regardless of temperature. There was no interaction between temperature and pH on the calcification ratio at the base of the spines (p=0.536) (Fig. 3.3). 
-
 
 ```{r, echo = FALSE}
 #### Tip and base calcification ratios
@@ -261,11 +247,9 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));baseplot
 
-ggsave("CalcRatiobase.png", plot=baseplot,
-      path = "/Users/emilysesno/Desktop/R_Analysis/R_Analysis/output",
-      width = 7, height = 5)  
+#ggsave("CalcRatiobase.png", plot=baseplot, path = "/Users/emilysesno/Desktop/R_Analysis/R_Analysis/output",  width = 7, height = 5)  
 
-ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
+#ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
 
 #tip
 tipsummary<-results %>% 
@@ -302,7 +286,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
           legend.title = element_text(size=16, face="bold"));tipplot
 
 
-ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
+#ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
 ```
 
 ```{r, results=TRUE}
@@ -312,7 +296,7 @@ ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=30
 
 calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1, align="h");calcificationfig1
 
-ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1, dpi=300, width=16, height=6, units="in")
+#ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1, dpi=300, width=16, height=6, units="in")
 
 ```
 
@@ -320,56 +304,9 @@ ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1
 **Figure 3.3.** Effect of temperature and pH on the calcification ratio at the tip (a) and base (b) of spine cross-sections. Data are means ± standard error (s.e.), n = 14-18.
 
 
-### Spine Length  
 
-Although marginally nonsignificant, pH influenced relative spine length (% of TD) (p=0.0509) more than temperature (p=0.196). There was no interaction between temperature and pH (p=0.9326) on relative spine length (Fig. 3.4). 
 
-```{r, echo = FALSE}
-
-length_summary<-results %>% 
-  select("Temperature","pH","RatioLength", "Chosen") %>%
-  drop_na(RatioLength) %>%
-  mutate(Ratio = RatioLength/2) %>% 
-  filter(Chosen == "yes") %>% 
-  group_by(pH, Temperature) %>%
-  summarize(mean = mean(Ratio), se = std.error(Ratio), N = length(Ratio))
-
-  lengthplot<-ggplot(data=length_summary, aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
-    geom_point(size = 3,  position=position_dodge(0.1)) +
-    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
-    xlab("Temperature Treatment") +
-    ylab("Spine Length : Diameter")+
-    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
-    ylim(10,20) +
-    theme_bw() + 
-    geom_text(x=1.5, y=12.5, label="p(pH)=0.05", size=6, color="darkgray") + 
-    geom_text(x=1.5, y=12, label="p(Temperature)=0.20", size=6, color="darkgray") + 
-    geom_text(x=1.5, y=11.5, label="p(Interaction)=0.93", size=6, color="darkgray") + 
-    scale_x_discrete(limits=c("ambient", "heated"), 
-                     label=c("Ambient", "High"))+
-    scale_colour_manual(name = "pH Treatment",
-                        values = c("skyblue3", "gray40"),
-                        labels = c("Acidified", "Ambient"),
-                        guide = guide_legend(reverse = TRUE)) +
-    #ylim(250,450)+
-    theme_classic()+
-    theme(legend.position = "right", 
-          legend.background = element_blank(), 
-          axis.title = element_text(size = 16, face="bold"),
-          axis.text = element_text(size = 14), 
-          plot.title = element_text(size=16, face="bold"),
-          legend.text = element_text(size=14), 
-          legend.title = element_text(size=16, face="bold"));lengthplot
-
-ggsave(filename="Figures/20200611/LengthFig.png", plot=lengthplot, dpi=300, width=8, height=6, units="in")
-```
-
-**Figure 3.4.** Effect of temperature and pH on the relative spine lengths (Ratio of spine length: diameter). Data are means ± standard error (s.e.), n = 51.
-
-### Dropped Spines  
-
-Low pH significantly increased the number of spines shed on the bottom of the tank regardless of temperature throughout the experimental period (p<0.0001). Urchins in low pH and ambient temperatures shed more spines than those in the control (ambient pH and ambient temperature) (p = 0.004) and ambient pH and high temperatures (p = 0.045). Those in low pH and high temperatures also shed more spines than those in the control (p=0.011) (Fig 3.5). 
-
+### Spine Loss 
 
 ```{r, echo = FALSE}
 
@@ -405,7 +342,7 @@ droppedsummary<-results %>%
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));dropplot
 
-ggsave(filename="Figures/20200611/DroppedSpinesFig.png", plot=dropplot, dpi=300, width=8, height=6, units="in")
+#ggsave(filename="Figures/20200611/DroppedSpinesFig.png", plot=dropplot, dpi=300, width=8, height=6, units="in")
 ```
 
 **Figure 3.5.** Effect of temperature and pH on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6  
