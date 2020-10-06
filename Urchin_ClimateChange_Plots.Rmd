@@ -31,8 +31,6 @@ library("cowplot") #grid plotting
 
 ### Treatment Conditions
 
-ADJUST RESULTS TO REFLECT ANOVAS BELOW FOR TREATMENTS: 
-
 ```{r, results=TRUE}
 #temp between high and ambient temp
 summary(aov(Temp ~ Temperature, data=results)) #temperature was different between high and ambient treatment
