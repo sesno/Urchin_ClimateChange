@@ -20,7 +20,6 @@ rm(list=ls(all=TRUE))
 
 results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na.strings="NA")
 
-library("tidyverse")
 library("lme4") #linear mixed modeling
 library("lmtest") #linear mixed modeling
 library("lmerTest") #calculate p-values in models
@@ -42,7 +41,7 @@ library("effsize")
 library("FSA")
 library("rcompanion")
 library("broom") #turns model output into data frames
-library("kableExtra") #create tables for easy viewing of data
+library("tidyverse")
 ```
 
 # Approach:
