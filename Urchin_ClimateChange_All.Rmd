@@ -98,6 +98,8 @@ EnviroMean <-
     group_by(Temperature, pH) %>% 
     summarise(mean_T = mean(Temp, na.rm = T),
               se_T = sd(Temp, na.rm = T)/sqrt(12),
+              min_T = min(Temp, na.rm = T), 
+              max_T = max(Temp, na.rm = T),
               mean_pH = mean(pHspec, na.rm = T), 
               se_pH = sd(pHspec, na.rm = T)/sqrt(12),
               mean_pCO2 = mean(pCO2out, na.rm = T), 
@@ -449,10 +451,6 @@ Initial <-
       #sizes on day 1  
     select("Temperature", "pH", "Diameter", "TankID")
 
-#Mean diameters on day 1
-  mean(Initial$Diameter)
-  std.error(Initial$Diameter)
-
   
 Final <- 
   #seperate out the final sizes of urchins on day 126
@@ -488,7 +486,11 @@ resultsGrow <- bind_cols(resultsGrow, Growth)
 #Figure out means of each treatment group
 resultsGrow %>% 
   dplyr::group_by(Temperature, pH) %>% 
-  dplyr::summarise(mean = mean(Growth), s.e. = se(Growth))
+  dplyr::summarise(mean = mean(Growth), s.e. = se(Growth)) %>% 
+
+  kbl(caption = "Table 6: Growth means +/- se after 126 days") %>% 
+  kable_classic_2() %>% 
+  kable_styling(c("striped", "hover"), full_width = F, html_font= "Times New Roman")
 
 ```
 
@@ -733,12 +735,12 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
 ```
 
 Combine both interaction plots at base and tip to be in horizontal line
-```{r, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE, results = FALSE, echo=FALSE}
 
 #Make plots of calcification at tip and base in horizontal line with proper labeling of a and b
 #removed legend on the tip, so they can share the same one. But now they are different sizes...
 
-calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1, align="h");calcificationfig1
+#calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1, align="h");calcificationfig1
 
 #ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1, dpi=300, width=16, height=6, units="in")
 
