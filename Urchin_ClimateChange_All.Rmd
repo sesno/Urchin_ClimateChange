@@ -97,15 +97,15 @@ EnviroMean <-
     drop_na(Day) %>% 
     group_by(Temperature, pH) %>% 
     summarise(mean_T = mean(Temp, na.rm = T),
-              se_T = sd(Temp, na.rm = T)/sqrt(12),
+              se_T = sd(Temp, na.rm = T)/sqrt(6),
               min_T = min(Temp, na.rm = T), 
               max_T = max(Temp, na.rm = T),
               mean_pH = mean(pHspec, na.rm = T), 
-              se_pH = sd(pHspec, na.rm = T)/sqrt(12),
+              se_pH = sd(pHspec, na.rm = T)/sqrt(6),
               mean_pCO2 = mean(pCO2out, na.rm = T), 
-              se_pCO2 = sd(pCO2out, na.rm = T)/sqrt(12),
+              se_pCO2 = sd(pCO2out, na.rm = T)/sqrt(6),
               mean_AlkTotal = mean(AlkTotal, na.rm = T),
-              se_AlkTotal = sd(AlkTotal, na.rm = T)/sqrt(12))
+              se_AlkTotal = sd(AlkTotal, na.rm = T)/sqrt(6))
 
 EnviroMean %>% 
   kbl(caption = "Table 1: Experimental treatments and environmental conditions (mean +/- standard error) of the 126-day experiment.") %>% 
@@ -216,6 +216,7 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
     geom_point(size = 2.5, show.legend=FALSE) +
     geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
     geom_line(size=1.2) +
+    geom_vline(xintercept=0) +
     scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
     scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
     scale_shape_discrete(name = NULL,
@@ -255,6 +256,7 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
     geom_point(size = 2.5, show.legend=FALSE) +
     geom_errorbar(aes(ymin = meanpH-sd, ymax = meanpH+sd)) +
     geom_line(size=1.2) +
+    geom_vline(xintercept=0) +
     scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
     scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
     scale_shape_discrete(name = NULL,
@@ -668,7 +670,7 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
     geom_point(size = 3,  position=position_dodge(0.1)) +
     geom_line(aes(group=pH),  position=position_dodge(0.1)) +
     xlab("Temperature Treatment") +
-    ylab("Spine Base Calcification Ratio")+
+    ylab("Proximal Calcification Ratio")+
     ylim(1,3.5)+
     geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
     theme_bw() + 
@@ -692,7 +694,7 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
 
 #ggsave("CalcRatiobase.png", plot=baseplot, path = "/Users/emilysesno/Desktop/R_Analysis/R_Analysis/output",  width = 7, height = 5)  
 
-#ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
 
 #tip
 tipsummary<-results %>% 
@@ -706,7 +708,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
     geom_point(size = 3,  position=position_dodge(0.1)) +
     geom_line(aes(group=pH),  position=position_dodge(0.1)) +
     xlab("Temperature Treatment") +
-    ylab("Spine Tip Calcification Ratio")+
+    ylab("Distal Calcification Ratio")+
     ylim(1,3.5)+
     geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
     theme_bw() + 
@@ -758,7 +760,9 @@ resultsDropped <-
   #create data using only the needed variables.
   results %>% 
   select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
-  drop_na(SpineCount)
+  drop_na(SpineCount) %>% 
+  group_by(pH) %>% 
+  mutate(mean = mean(SpineCount))
 ```
 
 Analyse dropped spines with linear mixed effect model.  
