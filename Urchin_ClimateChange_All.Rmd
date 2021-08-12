@@ -762,7 +762,8 @@ resultsDropped <-
   select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
   drop_na(SpineCount) %>% 
   group_by(pH) %>% 
-  mutate(mean = mean(SpineCount))
+  mutate(mean = mean(SpineCount),
+         se = std.error(SpineCount))
 ```
 
 Analyse dropped spines with linear mixed effect model.  
@@ -815,6 +816,9 @@ Transfomraiton (of any usual kind) of dropped spines was not successful, so we u
 ```{r, results = FALSE, message=FALSE, warning=FALSE}
 ### Transformations not work, so use non parametric:
 kruskal.test(resultsDropped$SpineCount~resultsDropped$Treatment)# SIG*** (p=0.0005563)
+
+kruskal.test(resultsDropped$SpineCount~resultsDropped$Temperature)# 
+kruskal.test(resultsDropped$SpineCount~resultsDropped$pH)#
 ```
 
 Conduct Dunn Post Hoc Test for dropped spines
