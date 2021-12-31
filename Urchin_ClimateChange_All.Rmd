@@ -84,7 +84,6 @@ library("tidyverse")
     
 
 
-
 ## 1. Environmental Conditions and Manipulations:
 ###  a. Calculate environmental means
 ##### Table 1: Environmental Means
@@ -316,7 +315,7 @@ InitialDiameter <-
 
 
 InitialMean <- mean(InitialDiameter$Diameter)
-InitialSE <- sd(InitialDiameter$Diameter)/sqrt(24)
+InitialSE <- sd(InitialDiameter$Diameter)/sqrt(23)
 
 InitialMean
 InitialSE
@@ -342,7 +341,7 @@ AcclimatedDiameter <-
 
 
 AcclimatedMean <- mean(AcclimatedDiameter$Diameter)
-AcclimatedSE <- sd(AcclimatedDiameter$Diameter)/sqrt(24) 
+AcclimatedSE <- sd(AcclimatedDiameter$Diameter)/sqrt(23) 
 
 AcclimatedMean
 AcclimatedSE
@@ -369,7 +368,7 @@ Day1Diameter <-
 
 
 Day1Mean <- mean(Day1Diameter$Diameter)
-Day1SE <- sd(Day1Diameter$Diameter)/sqrt(24)
+Day1SE <- sd(Day1Diameter$Diameter)/sqrt(23)
 
 Day1Mean
 Day1SE
@@ -407,8 +406,8 @@ Day126SE
 Day  | Mean Urchin Diameter (mm) | se
 -----|---------------------------| -----
 -24  | 7.53                      | 0.15
--13  | 10.38                     | 0.22
-1    | 16.03                     | 0.35
+-13  | 10.38                     | 0.23
+1    | 16.03                     | 0.36
 126  | 70.52                     | 1.43
 
 ### b. Results of linear mixed model effect on diameter (day 1)
@@ -501,13 +500,13 @@ Growth linear mixed model results
 #LMM for growth:
 modGrow <-
   resultsGrow %>% 
-  lmer(Growth~ Temperature * pH + (1|TankID), data=.)
+  aov(Growth~ Temperature * pH, data=.)
 
 #Need to decide on model type that we want to use. 
 
 summary(modGrow)
 
-anova(modGrow, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
+aov(modGrow, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
 ```
 
 Check assumptions for growth model
