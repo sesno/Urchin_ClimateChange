@@ -87,7 +87,7 @@ library("tidyverse")
 ## 1. Environmental Conditions and Manipulations:
 ###  a. Calculate environmental means
 ##### Table 1: Environmental Means
-```{r, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 
 EnviroMean <- 
   results %>% 
@@ -239,7 +239,7 @@ tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
 ```
 
 ### d. Figure 2: pH over time
-```{r, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 
 pHsummary<-results %>% 
   select("Day","pH", "pHspec") %>%
@@ -436,7 +436,7 @@ plot(fitted(Day1Mod),resid(Day1Mod,type="pearson"),col="blue")
 ### a. Growth
 #### i. Growth Analysis
 Assemble data and calculate means using day 1 as initial diameter and calculate means
-```{r, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 ### GROWTH MODEL 1: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
 
 Initial <-
@@ -523,6 +523,13 @@ leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
 plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
 ```
 
+Test for lm instead of lmer growth model
+```{r}
+
+
+```
+
+
 #### ii. Growth Interaction Plot 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -565,7 +572,6 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
 
 #ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
 ```
-
 
 
 ### b. Calcification Ratio
