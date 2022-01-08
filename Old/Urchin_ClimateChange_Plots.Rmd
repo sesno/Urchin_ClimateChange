@@ -1,0 +1,346 @@
+---
+title: "Plots for growth and calcification responce of the common collector urchin, _Tripneustes gratilla_, to projected climate change: effects of warming and acidification."
+author: "Emily Sesno"
+output:
+  html_document:
+    code_folding: hide
+    toc: yes
+    toc_depth: 6
+    toc_float: yes
+    smart: false
+  pdf_document:
+    keep_tex: yes
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+rm(list=ls(all=TRUE))
+results <- read.csv("Data/Urchin_ClimateChange_Data.csv", header=T, na.strings="NA")
+
+library("tidyverse")
+library("lme4") #linear mixed modeling
+library("lmtest") #linear mixed modeling
+library("lmerTest") #calculate p-values in models
+library("car") #levenes tests
+library("emmeans") #post-hoc tests
+library("lsmeans") #post-hoc tests
+library("plotrix") #calculate std.error
+library("dplyr") 
+library("cowplot") #grid plotting 
+```
+
+
+### Treatment Conditions
+
+```{r, results=TRUE}
+#temp between high and ambient temp
+summary(aov(Temp ~ Temperature, data=results)) #temperature was different between high and ambient treatment
+
+#pH between high and ambient co2
+summary(aov(pHspec ~ pH, data=results)) #pH was different between high and ambient co2 treatments
+
+#temp between headers in high
+aov1<- results %>%
+  filter(Temperature=="heated")
+
+summary(aov(Temp ~ as.factor(Header), data=aov1)) #not different between headers
+
+#temp between headers in ambient
+aov2<- results %>%
+  filter(Temperature=="ambient")
+
+summary(aov(Temp ~ as.factor(Header), data=aov2)) #not different between headers
+
+#pH between headers in high
+aov3<- results %>%
+  filter(pH=="acidified")
+
+summary(aov(pHspec ~ as.factor(Header), data=aov3)) #not different between headers
+
+#pH between headers in ambient
+aov4<- results %>%
+  filter(pH=="ambient")
+
+summary(aov(pHspec ~ as.factor(Header), data=aov4)) #not different between headers
+
+```
+
+```{r, results=TRUE}
+tempsummary<-results %>% 
+  select("Day", "Temperature", "Temp") %>%
+  drop_na(Temp) %>%
+  group_by(Day, Temperature) %>%
+  mutate(meanT = mean(Temp)) %>%
+  group_by(Temperature) %>% 
+  mutate(sd = sd(Temp)) %>%
+  mutate(se = sd/sqrt(12)) 
+
+tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
+    geom_point(size = 2.5, show.legend=FALSE) +
+    geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
+    geom_line(size=1.2) +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Ambient", "High"))+
+    scale_color_manual(name = NULL,
+                       values = c("gray40", "firebrick3"),
+                       labels = c("Ambient", "High")) +
+    ggtitle("")+
+    theme_classic() +
+    theme(plot.margin=unit(c(0.3,0.6,0.3,0.3), "cm"))+
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14, face="bold"));tempplot
+
+#ggsave(filename="Figures/20200611/TempFig1.png", plot=tempplot, dpi=300, width=7, height=5, units="in")
+
+```
+
+```{r, results=TRUE}
+
+pHsummary<-results %>% 
+  select("Day","pH", "pHspec") %>%
+  drop_na(pHspec) %>%
+  group_by(Day, pH) %>%
+  mutate(meanpH = mean(pHspec)) %>%
+  group_by(pH, meanpH) %>% 
+  mutate(sd = sd(pHspec)) %>%
+  mutate(se = sd/sqrt(12)) 
+  
+  
+pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
+    geom_point(size = 2.5, show.legend=FALSE) +
+    geom_errorbar(aes(ymin = meanpH-sd, ymax = meanpH+sd)) +
+    geom_line(size=1.2) +
+    scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
+    scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
+    scale_shape_discrete(name = NULL,
+                         labels = c("Low pH", "High pH"))+
+    scale_color_manual(name = NULL,
+                       values = c("skyblue3", "gray40"),
+                       labels = c("Acidified", "Ambient"),
+                       guide = guide_legend(reverse = TRUE)) +
+    ggtitle("")+
+    theme_classic() +
+    theme(plot.margin=unit(c(0.3,0.6,0.3,0.3), "cm"))+
+    theme(legend.margin = margin(0), 
+          legend.position = c(.98,.8), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14, face="bold"));pHplot
+
+#ggsave(filename="Figures/20200611/pHFig1.png", plot=pHplot, dpi=300, width=7, height=5, units="in")
+
+```
+
+
+```{r, results=TRUE}
+
+#Make plots in horizontal line with proper labeling of a and b
+
+treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
+
+#ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
+
+```
+
+**Figure 3.1.** Temperature (a) and pH (b) conditions over the 126-day experiment period. Data are mean ± standard error (s.e.). Where error bars are not visible, error is too small to be seen. Days prior to 0 indicate the acclimation and conditioning period.
+
+
+### Growth: 
+
+
+```{r, echo = FALSE}
+#### Growth Interaction Plot
+##May need to adjust the p value for temp depending on which Anova() or anova() we use...
+
+growthsummary<-results %>% 
+  filter(Day==126) %>%
+  select("pH", "Temperature","Growth") %>%
+  drop_na(Growth) %>% 
+  mutate(meanPct = Growth*100) %>%
+  group_by(pH, Temperature) %>%
+  summarise(mean = mean(meanPct), 
+            N = length(meanPct),
+            se = std.error(meanPct))
+   
+  
+growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Total Growth (%)")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
+    geom_text(x=1.5, y=125, label="p(pH)=0.61", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=100, label="p(Temperature)=0.06", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=75, label="p(Interaction)=0.47", size=6, color="darkgray") + 
+    ylim(0,450)+
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(),
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"));growthplot
+
+#ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
+
+```
+
+**Figure 3.2.** Effect of (a) temperature and (b) pH on growth (%) of Tripneustes gratilla test diameters after 126-day exposure period. Data are mean ± standard error (s.e.), n= 11-12.
+
+
+### Calcification Ratio  
+
+```{r, echo = FALSE}
+#### Tip and base calcification ratios
+
+#base
+basesummary<-results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  filter(PartOfSpine=="Base")%>%
+  drop_na(RatioSEM) %>% 
+  group_by(pH, Temperature, PartOfSpine) %>%
+  summarize(mean = mean(RatioSEM), se = std.error(RatioSEM), N = length(RatioSEM))
+  
+baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Spine Base Calcification Ratio")+
+    ylim(1,3.5)+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
+    geom_text(x=1.5, y=1.6, label="p(pH)=0.002", size=6, color="black") + 
+    geom_text(x=1.5, y=1.4, label="p(Temperature)=0.16", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=1.2, label="p(Interaction)=0.54", size=6, color="darkgray") + 
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"));baseplot
+
+#ggsave("CalcRatiobase.png", plot=baseplot, path = "/Users/emilysesno/Desktop/R_Analysis/R_Analysis/output",  width = 7, height = 5)  
+
+#ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
+
+#tip
+tipsummary<-results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  filter(PartOfSpine=="Tip")%>%
+  drop_na(RatioSEM) %>% 
+  group_by(pH, Temperature, PartOfSpine) %>%
+  summarize(mean = mean(RatioSEM), se = std.error(RatioSEM), N = length(RatioSEM))
+
+tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Spine Tip Calcification Ratio")+
+    ylim(1,3.5)+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
+    geom_text(x=1.5, y=3.0, label="p(pH)=0.44", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=2.8, label="p(Temperature)=0.39", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=2.6, label="p(Interaction)=0.09", size=6, color="darkgray") + 
+    theme_classic()+
+    theme(legend.position = "none", #removed the legend for the tip, so when we align them horizontally we only have one legend. But need to adjust the size so it is the same as base
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"));tipplot
+
+
+#ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
+```
+
+```{r, results=TRUE}
+
+#Make plots of calcification at tip and base in horizontal line with proper labeling of a and b
+#removed legend on the tip, so they can share the same one. But now they are different sizes...
+
+calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1, align="h");calcificationfig1
+
+#ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1, dpi=300, width=16, height=6, units="in")
+
+```
+
+
+**Figure 3.3.** Effect of temperature and pH on the calcification ratio at the tip (a) and base (b) of spine cross-sections. Data are means ± standard error (s.e.), n = 14-18.
+
+
+
+
+### Spine Loss 
+
+```{r, echo = FALSE}
+
+droppedsummary<-results %>% 
+  select("Temperature","pH","SpineCount") %>%
+  drop_na(SpineCount) %>% 
+  group_by(pH, Temperature) %>%
+  summarize(mean = mean(SpineCount), se = std.error(SpineCount), N = length(SpineCount))
+
+  dropplot<-ggplot(data=droppedsummary, aes(x=Temperature, y=mean, color = pH, group=interaction(Temperature,pH))) +
+    geom_point(size = 3,  position=position_dodge(0.1)) +
+    geom_line(aes(group=pH),  position=position_dodge(0.1)) +
+    xlab("Temperature Treatment") +
+    ylab("Dropped Spines")+
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se, width = 0.1), position=position_dodge(0.1)) +
+    ylim(0,30) +
+    theme_bw() + 
+    scale_x_discrete(limits=c("ambient", "heated"), 
+                     label=c("Ambient", "High"))+
+    scale_colour_manual(name = "pH Treatment",
+                        values = c("skyblue3", "gray40"),
+                        labels = c("Acidified", "Ambient"),
+                        guide = guide_legend(reverse = TRUE)) +
+    #geom_text(x=1.5, y=11, label="p(pH)<0.001", size=6, color="black") + 
+    #geom_text(x=1.5, y=9, label="p(Temperature)=0.91", size=6, color="darkgray") + 
+    #geom_text(x=1.5, y=7, label="p(Interaction)=0.83", size=6, color="darkgray") +
+    theme_classic()+
+    theme(legend.position = "right", 
+          legend.background = element_blank(), 
+          axis.title = element_text(size = 16, face="bold"),
+          axis.text = element_text(size = 14), 
+          plot.title = element_text(size=16, face="bold"),
+          legend.text = element_text(size=14), 
+          legend.title = element_text(size=16, face="bold"));dropplot
+
+#ggsave(filename="Figures/20200611/DroppedSpinesFig.png", plot=dropplot, dpi=300, width=8, height=6, units="in")
+```
+
+**Figure 3.5.** Effect of temperature and pH on the number of spines dropped. Data are means + standard error (s.e.), n = 5-6  
