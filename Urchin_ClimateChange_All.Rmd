@@ -483,7 +483,8 @@ Initial <-
       #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
     filter(Day == "1") %>% 
       #sizes on day 1  
-    select("Temperature", "pH", "Diameter", "TankID")
+    select("Temperature", "pH", "Diameter", "TankID")%>%
+    rename(InitialDiameter=Diameter)
 
   
 Final <- 
@@ -495,26 +496,27 @@ Final <-
       #gather Diam1 and Diam2 into single column
     filter(Day == "126") %>% 
       #filter for sizes on day 126
-    select("Temperature", "pH", "Diameter","TankID")
+    select("Temperature", "pH", "Diameter","TankID")%>%
+    rename(FinalDiameter=Diameter)
 
 
-Growth <- 
+resultsGrow <- 
   #create column that is growth
-  bind_cols(Initial, Final) %>% 
+  full_join(Initial, Final) %>% 
     #binds initial (Diameter) and final (Diameter1) sizes to calculate growth
-  mutate(Growth = ((Diameter1 - Diameter)/Diameter*100)) %>% 
+  mutate(Growth = ((FinalDiameter - InitialDiameter)/InitialDiameter*100)) %>% 
     #add column for growth calculation
-  select("Growth")
+  select("Temperature", "pH", "TankID", "Growth")
 
-
-resultsGrow <-
+##WE DONT NEED THIS CODE ANYMORE, THE FULL JOIN ABOVE DOES ALL THIS IN A MORE SECURE WAY 
+#resultsGrow <-
   #table of initial and final size data
-  results %>% 
-    select("Day", "Treatment", "Temperature", "pH", "TankID", "Diam1", "Diam2") %>% 
-    drop_na(Diam1, Diam2) %>% 
-    gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
-    filter(Day == "126")
-resultsGrow <- bind_cols(resultsGrow, Growth)
+  #results %>% 
+    #select("Day", "Treatment", "Temperature", "pH", "TankID", "Diam1", "Diam2") %>% 
+    #drop_na(Diam1, Diam2) %>% 
+    #gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
+    #filter(Day == "126")
+#resultsGrow <- full_join(resultsGrow, Growth)
 #combines table of initial and final with growth information
 
 #Figure out means of each treatment group
@@ -548,6 +550,7 @@ shapiro.test(residuals(modGrow)) #passes
 hist(residuals(modGrow)) #looks normal
 
 ```
+
 ```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 2. Equal variances
@@ -621,9 +624,8 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
 ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
 ```
 
-### b. Growth over time analysis
+### b. Growth over time analysis (AH ADDED DAY TO THIS MODEL)  
 ```{r, message=FALSE, warning=FALSE}
-
 
 resultsGrowTime <-  #create table of growth in treatments
   results %>% 
@@ -633,7 +635,7 @@ resultsGrowTime <-  #create table of growth in treatments
   mutate(se = (std.error(Growth))*100) %>%
   mutate(meanPct = (mean(Growth)*100))
 
-modelGrowTime <- lmer(Growth~Temperature*pH + (1|TankID), data=resultsGrowTime)
+modelGrowTime <- lmer(Growth~Temperature*pH*Day + (1|TankID), data=resultsGrowTime)
 summary(modelGrowTime) #generate results
 anova(modelGrowTime, type=2)
 
