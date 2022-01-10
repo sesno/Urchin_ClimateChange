@@ -522,7 +522,7 @@ resultsGrow <-
 #Figure out means of each treatment group
 resultsGrow %>% 
   dplyr::group_by(Temperature, pH) %>% 
-  dplyr::summarise(mean = mean(Growth), s.e. = se(Growth)) %>% 
+  dplyr::summarise(mean = mean(Growth), s.e. = se(Growth), n=length(Growth)) %>% 
 
   kbl(caption = "Table 6: Growth means (%) +/- se after 126 days") %>% 
   kable_classic_2() %>% 
@@ -554,23 +554,42 @@ hist(residuals(modGrow)) #looks normal
 ```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 2. Equal variances
-leveneTest(residuals(modGrow)~resultsGrow$Treatment) #Passes
+leveneTest(residuals(modGrow)~resultsGrow$Temperature) #Passes
+leveneTest(residuals(modGrow)~resultsGrow$pH) #doesn't pass
 plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
 ```
+Now, calculate effect size for difference in growth by temperature.  
 
-Power analysis for test
+```{r}
+library("effsize")
+library("rstatix")
+
+#calculate cohens D effect size
+cohens_d(Growth ~ Temperature, var.equal = FALSE, ref.group="ambient", data=resultsGrow)
+
+```
+From this, we see that we have a large effect size between temperature treatments (-0.86). 
+
+Confirm that we have the sapmle size necessary to detect a large effect. Power analysis for test
 ```{r, message=FALSE, warning=FALSE}
 
-pwr.anova.test(k=4, n= 5.75, f=0.7, sig.level = 0.05) #balanced one way anova
+#calculate test power first given known variables  
+pwr.anova.test(k=4, n=6, f=0.8, sig.level = 0.05) #balanced one way anova
 
 #k=Number of groups - 4 treatments
-#n=Number of observations (per group) - 5.75 to account for 1 dead
-#f=Effect size - 0.5 based on some readings, but not sure if that's right
+#n=Number of observations (per group) - 6 
+#f=Effect size - 0.8 based on above calculation
 #sig.level=Significance level (Type I error probability)
-#power=Power of test (1 minus Type II error probability)
 
+#solve for power=Power of test (1 minus Type II error probability)
 
-pwr.f2.test(u=1, v=42, f=0.7, sig.level = 0.05) #general linear model
+#this last test identified power as 0.86, now look for the sample size we would need to detect a small (0.2), medium (0.5) or large (0.8) effect size. 
+
+pwr.anova.test(k=4, f=0.2, sig.level = 0.05, power=0.86) #n needed for small effect, would need n=79 urchins
+pwr.anova.test(k=4, f=0.5, sig.level = 0.05, power=0.86) #n needed for small effect, would need n=13 urchins 
+pwr.anova.test(k=4, f=0.8, sig.level = 0.05, power=0.86) #n needed for small effect, would need n=6 urchins
+
+#pwr.f2.test(u=1, v=42, f=0.7, sig.level = 0.05) #general linear model
 
 #u	= degrees of freedom for numerator
 #v	= degrees of freedom for denominator
@@ -580,6 +599,9 @@ pwr.f2.test(u=1, v=42, f=0.7, sig.level = 0.05) #general linear model
 
 ```
 
+This power analysis for growth shows us that in order to detect a small effect, we would need 79 urchins. To detect a medium effect, we would need 13 urchins. To detect a large effect, we would need 6 urchins. Given that we have n=6 urchins per group, we would have the statistical power to detect a large effect that was detected. This validates our tst power. 
+
+We can repeat this approach for each response.  
 
 ### ii. Growth Interaction Plot 
 ```{r, message=FALSE, warning=FALSE}
