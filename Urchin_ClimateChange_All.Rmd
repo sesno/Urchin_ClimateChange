@@ -27,13 +27,14 @@ library("car") #levenes tests
 library("emmeans") #post-hoc tests
 library("lsmeans") #post-hoc tests
 library("plotrix") #calculate std.error
+#install.packages("rstatix") #use for calculating effect size for power test - not installing properly
 library("plyr")  #splitting, applying, and combining data
 library("dplyr") 
 library("cowplot") #grid plotting and arrange plots
 library("effects") #plot effects of modeling
 library("MuMIn")
 library("car") #levenes tests, Anova, qqPlots, 
-library("tidyverse")
+install.packages("tidyverse")
 library("stats")
 library("onewaytests") #allows for Welch test with unequal variances (spine lengths)
 library("stats")
@@ -44,6 +45,7 @@ library("broom") #turns model output into data frames
 library("kableExtra") #makes data tables easier to read
 library("tidyverse")
 library("pwr") #run power tests
+library("effsize")
 ```
 
 # Approach:
@@ -699,14 +701,15 @@ ggsave(filename="Figures/20200611/GrowthTreatments.png", dpi=300, width=8, heigh
 
 #### ii. Growth over time plot by temperature
 ```{r}
+
+GrowthTemp <- 
 results %>% 
   select("Day","Temperature","Growth") %>%
   drop_na(Growth) %>% 
   group_by(Day, Temperature) %>%
   mutate(se = (std.error(Growth))*100) %>%
   mutate(meanPct = (mean(Growth)*100)) %>% 
-
-  
+ 
   ggplot(aes(Day, meanPct, shape = Temperature, color = Temperature)) +
     geom_point(size = 2.5) +
     geom_line() +
@@ -724,10 +727,14 @@ results %>%
           legend.justification = c("left", "top")) + 
     annotate("text", x = 0, y = 375, label = "(a)") +
     annotate("text", x = 130, y = 359, label = "*", size = 7)
+
+ggsave(filename="Figures/20200611/GrowthTemp.png", plot=GrowthTemp, dpi=300, width=8, height=6, units="in")
 ```
 
 #### iii. Growth over time plot by pH
 ```{r}
+
+GrowthpH <-
 results %>% 
   select("Day","pH","Growth") %>%
   drop_na(Growth) %>% 
@@ -752,7 +759,7 @@ results %>%
           legend.justification = c("left", "top")) + 
     annotate("text", x = 0, y = 370, label = "(b)")
     
-
+ggsave(filename="Figures/20200611/GrowthpH.png", plot=GrowthpH, dpi=300, width=8, height=6, units="in")
 ```
 
 
