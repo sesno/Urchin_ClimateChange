@@ -79,15 +79,17 @@ library("effsize")
 
 3. Response Analyses:
     a. Growth (%)
-        i.   Growth Analysis
-        ii.  Figure 3: Growth Interaction Plot
+        i.  Final Growth Analysis
+              1. Figure 3: Growth Interaction Plot
+        ii. Growth Over Time analysis
+              1. Figure 4, 5, 6: Growth Over Time Plots
     b. Calcification Ratio
         i.   Calcification Analysis at the Tips
         ii.  Calcification Analysis at the Bases
-        iii. Figure 4: Calcification Interaction Plot
+        iii. Figure 7: Calcification Interaction Plots
     c. Spine Loss (count)
         i.   Spine Loss Analysis
-        ii.  Figure 5: Spine Loss Interaction Plot
+        ii.  Figure 8: Spine Loss Interaction Plot
     
 
 
@@ -308,17 +310,15 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
 
 ```
 
+```{r plotgrid Temp and pH, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 
-```{r, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+#Make plots in vertical line with proper labeling of a and b
 
-#Make plots in horizontal line with proper labeling of a and b
-
-treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
+#treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=1, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
 
 #ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
 
 ```
-
 
 
 ## 2. Urchin Diameters:
@@ -463,10 +463,10 @@ plot(fitted(Day1Mod),resid(Day1Mod,type="pearson"),col="blue")
 
 ## 3. Response Analysis
 ### a. Growth
-#### i. Growth Analysis
+#### i. FINAL Growth Analysis
 Assemble data and calculate means using day 1 as initial diameter and calculate means
 ```{r message=FALSE, warning=FALSE}
-### GROWTH MODEL 1: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
+### GROWTH MODEL: using day 1 as the first official day of experiment when desired environmental conditions were met (24 days after getting urchins. In that 24 days, they were acclimated and then conditions ramped up)
 
 Initial <-
   #seperate out the initial sizes of urchins on day 1, when desired conditions were met to standardize growth to this measurement.
@@ -476,7 +476,7 @@ Initial <-
       #remove urchin number 8 which died halfway through
     drop_na(Diam1, Diam2) %>% 
     gather(key = "1or2", value = "Diameter", "Diam1", "Diam2") %>% 
-      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously recieved)
+      #gather Diam1 and Diam2 into single column in order to make number of levels of each grouping factor < number of observations (as per error message previously received)
     filter(Day == "1") %>% 
       #sizes on day 1  
     select("Temperature", "pH", "Diameter", "TankID")%>%
@@ -516,11 +516,9 @@ meanGrowth <-
     dplyr::summarise(meanGrowth = mean(Growth), s.e. = se(Growth), n=length(Growth))
       #Figure out means of each treatment group
 
-meanGrowth
-
 ```
 ##### vi. Table 4: Urchin Growth means 
-Temp | pH   | Mean Growth (%) |  se
+Temp |pH    |Mean Growth (%)   |se
 -----|------|-----------------|------
 Amb  | OA   | 326.62          | 0.15
 Amb  | Amb  | 323.25          | 0.23
@@ -528,7 +526,7 @@ Heat | OA   | 352.02          | 0.36
 Heat | Amb  | 376.25          | 1.43
 
 
-Growth ANOVA results
+FINAL growth ANOVA results
 ```{r, message=FALSE, warning=FALSE}
 #LMM for growth:
 modGrow <-
@@ -539,7 +537,7 @@ summary(modGrow)
 
 ```
 
-Check assumptions for growth model
+Check assumptions for FINAL growth model
 ```{r, message=FALSE, warning=FALSE}
 ## ASSSUMPTIONS
 # 1. Normality of residuals
@@ -556,20 +554,23 @@ leveneTest(residuals(modGrow)~resultsGrow$Temperature) #Passes
 leveneTest(residuals(modGrow)~resultsGrow$pH) #doesn't pass
 plot(fitted(modGrow),resid(modGrow,type="pearson"),col="blue")
 ```
-Now, calculate effect size for difference in growth by temperature.  
-
+  
+Power Analysis for FINAL growth model: Calculate Effect Size
 ```{r}
+#calculate effect size for difference in growth by temperature.
 library("effsize")
 library("rstatix")
 
 #calculate cohens D effect size
-cohens_d(Growth ~ Temperature, var.equal = FALSE, ref.group="ambient", data=resultsGrow)
+#cohens_d(Growth ~ Temperature, var.equal = FALSE, ref.group="ambient", data=resultsGrow)
+#somethings acting weird here, but now not using this analysis
 
+#From this, we see that we have a large effect size between temperature treatments (). 
 ```
-From this, we see that we have a large effect size between temperature treatments (-0.86). 
 
-Confirm that we have the sapmle size necessary to detect a large effect. Power analysis for test
+Power Analysis for FINAL growth model: Confirm Sample size
 ```{r, message=FALSE, warning=FALSE}
+#Confirm that we have the sapmle size necessary to detect a large effect. Power analysis for test
 
 #calculate test power first given known variables  
 pwr.anova.test(k=4, n=6, f=0.8, sig.level = 0.05) #balanced one way anova
@@ -587,21 +588,10 @@ pwr.anova.test(k=4, f=0.2, sig.level = 0.05, power=0.86) #n needed for small eff
 pwr.anova.test(k=4, f=0.5, sig.level = 0.05, power=0.86) #n needed for small effect, would need n=13 urchins 
 pwr.anova.test(k=4, f=0.8, sig.level = 0.05, power=0.86) #n needed for small effect, would need n=6 urchins
 
-#pwr.f2.test(u=1, v=42, f=0.7, sig.level = 0.05) #general linear model
-
-#u	= degrees of freedom for numerator
-#v	= degrees of freedom for denominator
-#f2	= effect size
-#sig.level	= Significance level (Type I error probability)
-#power	= Power of test (1 minus Type II error probability)
-
+#This power analysis for growth shows us that in order to detect a small effect, we would need 79 urchins. To detect a medium effect, we would need 13 urchins. To detect a large effect, we would need 6 urchins. Given that we have n=6 urchins per group, we would have the statistical power to detect a large effect that was detected. This validates our test power. 
 ```
 
-This power analysis for growth shows us that in order to detect a small effect, we would need 79 urchins. To detect a medium effect, we would need 13 urchins. To detect a large effect, we would need 6 urchins. Given that we have n=6 urchins per group, we would have the statistical power to detect a large effect that was detected. This validates our tst power. 
-
-We can repeat this approach for each response.  
-
-### ii. Growth Interaction Plot 
+##### 1. FINAL Growth Interaction Plot 
 ```{r, message=FALSE, warning=FALSE}
 
 growthsummary<-resultsGrow %>% 
@@ -644,7 +634,7 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
 #ggsave(filename="Figures/20200611/GrowthFig.png", plot=growthplot, dpi=300, width=8, height=6, units="in")
 ```
 
-### b. Growth over time analysis (AH ADDED DAY TO THIS MODEL)  
+#### ii. Growth over time analysis
 ```{r, message=FALSE, warning=FALSE}
 
 resultsGrowTime <-  #create table of growth in treatments
@@ -667,8 +657,46 @@ resultsGrowTime$code<-paste(resultsGrowTime$Treatment, resultsGrowTime$Day)
 leveneTest(residuals(modelGrowTime)~resultsGrowTime$code)
 ```
 
+Power Analysis for growth OVER TIME model: Calculate Effect Size
+```{r}
+#calculate effect size for difference in growth by temperature.
+library("effsize")
+library("rstatix")
 
-#### i. Growth over time plot across all treatments
+#calculate cohens D effect size
+cohens_d(Growth ~ Temperature, var.equal = FALSE, ref.group="ambient", data=resultsGrowTime)
+
+#From this, we see that we have a negligible effect size between temperature treatments (-0.100). 
+```
+
+Power Analysis for OVER TIME growth model: Confirm Sample size
+```{r, message=FALSE, warning=FALSE}
+#Confirm that we have the sample size necessary to detect a large effect. Power analysis for test
+
+#calculate test power first given known variables  
+pwr.anova.test(k=4, n=96, f=0.1, sig.level = 0.05) #balanced one way anova
+
+#k=Number of groups - 4 treatments
+#n=Number of observations (per group) - 96 
+resultsGrowTime %>% 
+  count(Treatment)
+#f=Effect size - 0.1 based on above calculation
+#sig.level=Significance level (Type I error probability)
+
+#solve for power=Power of test (1 minus Type II error probability)
+
+#this last test identified power as 0.34, now look for the sample size we would need to detect a small (0.2), medium (0.5) or large (0.8) effect size. 
+
+pwr.anova.test(k=4, f=0.2, sig.level = 0.05, power=0.34) #n needed for small effect, would need n=25 urchins
+pwr.anova.test(k=4, f=0.5, sig.level = 0.05, power=0.34) #n needed for small effect, would need n=5 urchins 
+pwr.anova.test(k=4, f=0.8, sig.level = 0.05, power=0.34) #n needed for small effect, would need n=3 urchins
+
+#This power analysis for growth over time shows us that in order to detect a small effect, we would need 25 urchins. To detect a medium effect, we would need 5 urchins. To detect a large effect, we would need 3 urchins. Given that we have n=6 urchins per group, we would have the statistical power to detect a medium effect that was detected. This validates our test power. 
+```
+
+
+##### 1. Growth over time Plots
+Figure 4: Growth over time across all treatments
 ```{r, message=FALSE, warning=FALSE}
 
 #### Growth Across Treatments
@@ -699,7 +727,7 @@ ggplot(aes(Day, meanPct, shape = Treatment, color = Treatment)) +
 
 ```
 
-#### ii. Growth over time plot by temperature
+Figure 5: Growth over time plot by temperature
 ```{r}
 
 GrowthTemp <- 
@@ -730,7 +758,7 @@ results %>%
 #ggsave(filename="Figures/20200611/GrowthTemp.png", plot=GrowthTemp, dpi=300, width=8, height=6, units="in")
 ```
 
-#### iii. Growth over time plot by pH
+Figure 6. Growth over time plot by pH
 ```{r}
 
 GrowthpH <-
@@ -757,7 +785,17 @@ results %>%
           legend.justification = c("left", "top")) + 
     annotate("text", x = 0, y = 370, label = "(b)"); GrowthpH
     
-#ggsave(filename="Figures/20200611/GrowthpH.png", plot=GrowthpH, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/GrowthpH.png", plot=GrowthpH, dpi=300, width=8, height=6, units="in")
+```
+
+```{r plotgrid Temp and pH Growth, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
+
+#Make plots in horizontal line with proper labeling of a and b
+
+#GrowthFigs<-plot_grid(GrowthTemp, GrowthpH, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");GrowthFigs
+
+#ggsave(filename="Figures/20200611/GrowthFigs.png", plot=GrowthFigs, dpi=300, width=16, height=6, units="in")
+
 ```
 
 
@@ -804,6 +842,7 @@ leveneTest(residuals(modTip)~resultsTip$Treatment) #Pass
 plot(fitted(modTip),resid(modTip,type="pearson"),col="blue") 
 ```
 
+Power tests: Effect Size
 ```{r}
 library("effsize")
 library("rstatix")
@@ -811,10 +850,10 @@ library("rstatix")
 #calculate cohens D effect size
 cohens_d(RatioSEM ~ pH, var.equal = FALSE, ref.group="ambient", data=resultsTip)
 
+#From this, we see that we have a small effect size between pH treatments (0.17). 
 ```
-From this, we see that we have a small effect size between pH treatments (-0.17). 
 
-Confirm that we have the sample size necessary to detect a large effect. Power analysis for test
+Power test: Confirm sample size
 ```{r, message=FALSE, warning=FALSE}
 
 #calculate test power first given known variables  
@@ -830,8 +869,8 @@ pwr.anova.test(k=4, n=18, f=0.17, sig.level = 0.05) #balanced one way anova
 #this last test identified power as 0.19, now look for the sample size we would need to detect a small (0.2), medium (0.5) or large (0.8) effect size. 
 
 pwr.anova.test(k=4, f=0.2, sig.level = 0.05, power=0.19) #n needed for small effect, would need n=13 spines
-pwr.anova.test(k=4, f=0.5, sig.level = 0.05, power=0.19) #n needed for small effect, would need n=3 spines 
-#pwr.anova.test(k=4, f=0.8, sig.level = 0.05, power=0.19) #n needed for small effect, would need n=2 spines - this one doesn't work, maybe showing you don't need any urchins?
+pwr.anova.test(k=4, f=0.5, sig.level = 0.05, power=0.19) #n needed for medium effect, would need n=3 spines 
+#pwr.anova.test(k=4, f=0.8, sig.level = 0.05, power=0.19) #n needed for large effect, would need n=2 spines - this one doesn't work, maybe showing you don't need any urchins?
 
 ```
 
@@ -935,8 +974,8 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
                         values = c("skyblue3", "gray40"),
                         labels = c("Acidified", "Ambient"),
                         guide = guide_legend(reverse = TRUE)) +
-    geom_text(x=1.5, y=1.6, label="p(pH)=0.002", size=6, color="black") + 
-    geom_text(x=1.5, y=1.4, label="p(Temperature)=0.16", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=1.6, label="p(pH)=0.006", size=6, color="black") + 
+    geom_text(x=1.5, y=1.4, label="p(Temperature)=0.18", size=6, color="darkgray") + 
     geom_text(x=1.5, y=1.2, label="p(Interaction)=0.54", size=6, color="darkgray") + 
     theme_classic()+
     theme(legend.position = "right", 
@@ -947,9 +986,7 @@ baseplot<- ggplot(data=basesummary, aes(x=Temperature, y=mean, color = pH, group
           legend.text = element_text(size=14), 
           legend.title = element_text(size=16, face="bold"));baseplot
 
-#ggsave("CalcRatiobase.png", plot=baseplot, path = "/Users/emilysesno/Desktop/R_Analysis/R_Analysis/output",  width = 7, height = 5)  
-
-#ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/BaseCalcificationFig.png", plot=baseplot, dpi=300, width=8, height=6, units="in")
 
 #tip
 tipsummary<-results %>% 
@@ -975,7 +1012,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
                         guide = guide_legend(reverse = TRUE)) +
     geom_text(x=1.5, y=3.0, label="p(pH)=0.44", size=6, color="darkgray") + 
     geom_text(x=1.5, y=2.8, label="p(Temperature)=0.39", size=6, color="darkgray") + 
-    geom_text(x=1.5, y=2.6, label="p(Interaction)=0.09", size=6, color="darkgray") + 
+    geom_text(x=1.5, y=2.6, label="p(Interaction)=0.10", size=6, color="darkgray") + 
     theme_classic()+
     theme(legend.position = "none", #removed the legend for the tip, so when we align them horizontally we only have one legend. But need to adjust the size so it is the same as base
           legend.background = element_blank(), 
@@ -986,7 +1023,7 @@ tipplot<-ggplot(data=tipsummary, aes(x=Temperature, y=mean, color = pH, group=in
           legend.title = element_text(size=16, face="bold"));tipplot
 
 
-#ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
+ggsave(filename="Figures/20200611/TipCalcificationFig.png", plot=tipplot, dpi=300, width=8, height=6, units="in")
 
 
 ```
@@ -1017,8 +1054,8 @@ resultsDropped <-
   select ("Treatment", "Temperature", "pH", "SpineCount", "TankID") %>% 
   drop_na(SpineCount) %>%  
   group_by(pH) %>% 
-  mutate(mean = mean(SpineCount),
-         se = std.error(SpineCount))
+  mutate(mean = mean(SpineCount), se = std.error(SpineCount), N = length(SpineCount))
+
 ```
 
 Analyse dropped spines with linear mixed effect model.  
