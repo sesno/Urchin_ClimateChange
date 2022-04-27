@@ -771,7 +771,7 @@ Assemble data for chosen spine tips (distal end)
 resultsTip <- 
   #create data using only the SEM images of the tips of spines.
   results %>% 
-  select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+  select("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
     #selects for desired variables. PartOfSpine is tip or base, Chosen indicates which side of the image (arbitrary) is selected for (aka has no dust)
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Tip")
@@ -785,6 +785,7 @@ modTip <-
   resultsTip %>% 
   lmer(RatioSEM ~ Temperature * pH + (1|TankID), data = .)
 
+#somethign in this model is weird - treating each measure as individual and not as part of the random effect? 
 summary(modTip)
 
 anova(modTip, type="II") #anova{stats}.Compute analysis of variance (or deviance) tables for one or more fitted model objects. Produces Type II Analysis of Variance Table with Satterthwaite's method.
@@ -844,7 +845,7 @@ Assemble data for chosen spine bases (proximal end)
 resultsBase <-
    #create data using only the SEM images of the base of spines.
   results %>% 
-  select ("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
+  select("Treatment", "Temperature", "pH", "PartOfSpine", "Chosen", "RatioSEM", "TankID") %>% 
     #selects for desired variables. PartOfSpine is tip or base, Chosen indicates which side of the image (arbitrary) is selected for (aka has no dust)
   drop_na(RatioSEM) %>% 
   filter(Chosen == "yes", PartOfSpine == "Base")
