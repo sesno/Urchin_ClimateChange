@@ -9,6 +9,8 @@ output:
     toc_float: yes
   pdf_document:
     keep_tex: yes
+editor_options: 
+  chunk_output_type: console
 ---
 
 #  Setup  
@@ -478,7 +480,10 @@ Initial <-
     filter(Day == "1") %>% 
       #sizes on day 1  
     select("Temperature", "pH", "Diameter", "TankID")%>%
-    rename(InitialDiameter=Diameter)
+    group_by(TankID)%>%
+    mutate(Diameter=mean(Diameter))%>%
+    rename(InitialDiameter=Diameter)%>%
+    unique()
 
   
 Final <- 
@@ -491,7 +496,10 @@ Final <-
     filter(Day == "126") %>% 
       #filter for sizes on day 126
     select("Temperature", "pH", "Diameter","TankID")%>%
-    rename(FinalDiameter=Diameter)
+    group_by(TankID)%>%
+    mutate(Diameter=mean(Diameter))%>%
+    rename(FinalDiameter=Diameter)%>%
+    unique()
 
 
 resultsGrow <- 
@@ -508,7 +516,7 @@ meanGrowth <-
     dplyr::summarise(meanGrowth = mean(Growth), s.e. = se(Growth), n=length(Growth))
       #Figure out means of each treatment group
 
-resultsGrow
+meanGrowth
 
 ```
 ##### vi. Table 4: Urchin Growth means 
@@ -620,9 +628,9 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
                         values = c("skyblue3", "gray40"),
                         labels = c("Acidified", "Ambient"),
                         guide = guide_legend(reverse = TRUE)) +
-    geom_text(x=1.5, y=125, label="p(pH)=0.466", size=6, color="darkgray") + 
-    geom_text(x=1.5, y=100, label="p(Temperature)=0.006", size=6, color="black") + 
-    geom_text(x=1.5, y=75, label="p(Interaction)=0.303", size=6, color="darkgray") + 
+    #geom_text(x=1.5, y=125, label="p(pH)=0.466", size=6, color="darkgray") + 
+    #geom_text(x=1.5, y=100, label="p(Temperature)=0.006", size=6, color="black") + 
+    #geom_text(x=1.5, y=75, label="p(Interaction)=0.303", size=6, color="darkgray") + 
     ylim(0,450)+
     theme_classic()+
     theme(legend.position = "right", 
@@ -642,15 +650,21 @@ growthplot<-ggplot(data=growthsummary, aes(x=Temperature, y=mean, color = pH, gr
 resultsGrowTime <-  #create table of growth in treatments
   results %>% 
   select("Day", "TankID", "Treatment","Temperature","pH","Growth") %>%
-  drop_na(Growth) %>% 
-  group_by(Day, Treatment) %>%
-  mutate(se = (std.error(Growth))*100) %>%
-  mutate(meanPct = (mean(Growth)*100))
+  drop_na(Growth)  
 
-modelGrowTime <- lmer(Growth~Temperature*pH*Day + (1|TankID), data=resultsGrowTime)
+#doing square transformation here to account for smaller values at the start of the experiment 
+modelGrowTime <- lmer(Growth^2~Temperature*pH*Day + (1|TankID), data=resultsGrowTime)
 summary(modelGrowTime) #generate results
 anova(modelGrowTime, type=2)
 
+```
+
+Check assumptions of model.  
+```{r}
+hist(residuals(modelGrowTime))
+qqPlot(residuals(modelGrowTime))
+resultsGrowTime$code<-paste(resultsGrowTime$Treatment, resultsGrowTime$Day)
+leveneTest(residuals(modelGrowTime)~resultsGrowTime$code)
 ```
 
 
@@ -662,9 +676,7 @@ results %>%
   select("Day", "Treatment","Temperature","pH","Growth") %>%
   drop_na(Growth) %>% 
   group_by(Day, Treatment) %>%
-  mutate(se = (std.error(Growth))*100) %>%
-  mutate(meanPct = (mean(Growth)*100)) %>% 
-
+  summarise(se = (std.error(Growth))*100, meanPct = (mean(Growth)*100)) %>%
   
 ggplot(aes(Day, meanPct, shape = Treatment, color = Treatment)) +
     geom_point(size = 2.5) +
@@ -695,8 +707,7 @@ results %>%
   select("Day","Temperature","Growth") %>%
   drop_na(Growth) %>% 
   group_by(Day, Temperature) %>%
-  mutate(se = (std.error(Growth))*100) %>%
-  mutate(meanPct = (mean(Growth)*100)) %>% 
+  summarise(se = (std.error(Growth))*100, meanPct = (mean(Growth)*100))  %>% 
  
   ggplot(aes(Day, meanPct, shape = Temperature, color = Temperature)) +
     geom_point(size = 2.5) +
@@ -727,8 +738,7 @@ results %>%
   select("Day","pH","Growth") %>%
   drop_na(Growth) %>% 
   group_by(Day, pH) %>%
-  mutate(se = (std.error(Growth))*100) %>%
-  mutate(meanPct = (mean(Growth)*100)) %>% 
+  summarise(se = (std.error(Growth))*100, meanPct = (mean(Growth)*100)) %>%
 
   ggplot(aes(Day, meanPct, shape = pH, color = pH)) +
     geom_point(size = 2.5) +
