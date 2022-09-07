@@ -442,6 +442,9 @@ Day  | Mean Urchin Diameter (mm) | se
 ```{r, message=FALSE, warning=FALSE}
 Day1Mod <- lmer(Diameter ~ Temperature*pH + (1|TankID), data=Day1Diameter)
 anova(Day1Mod, type = 2)
+
+Day1aov <- lmer(Diameter ~ Treatment + (1|TankID), data=Day1Diameter)
+anova(Day1aov, type = 2)
 ```
 
 Check assumptions of diameter model (Day 1)
