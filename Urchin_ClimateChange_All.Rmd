@@ -244,7 +244,7 @@ tempsummary<-results %>%
 tempplot<-ggplot(data=tempsummary, aes(Day, meanT, color = Temperature)) +
     geom_point(size = 2.5, show.legend=FALSE) +
     geom_errorbar(aes(ymin = meanT-se, ymax = meanT+se)) +
-    geom_line(size=1.2) +
+    geom_line(size=1.5) +
     geom_vline(xintercept=0) +
     scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
     scale_y_continuous(name="Temperature (°C)", breaks = seq(20,30, by = 1)) +
@@ -284,7 +284,7 @@ pHsummary<-results %>%
 pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
     geom_point(size = 2.5, show.legend=FALSE) +
     geom_errorbar(aes(ymin = meanpH-sd, ymax = meanpH+sd)) +
-    geom_line(size=1.2) +
+    geom_line(size=1.5) +
     geom_vline(xintercept=0) +
     scale_x_continuous(name="Time (Day)", breaks = seq(0,130, by = 10)) +
     scale_y_continuous(name="pH (Total Scale)", breaks = seq(7.5,8.1, by = .1)) +
@@ -314,9 +314,9 @@ pHplot<-ggplot(data=pHsummary, aes(Day, meanpH, color = pH)) +
 
 #Make plots in vertical line with proper labeling of a and b
 
-#treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=1, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
+treatmentfig1<-plot_grid(tempplot, pHplot, labels = c("a", "b"), ncol=1, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");treatmentfig1
 
-#ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=16, height=6, units="in")
+ggsave(filename="Figures/20200611/TreatmentFig1.png", plot=treatmentfig1, dpi=300, width=8, height=8, units="in")
 
 ```
 
@@ -793,11 +793,11 @@ ggsave(filename="Figures/20200611/GrowthpH.png", plot=GrowthpH, dpi=300, width=8
 
 ```{r plotgrid Temp and pH Growth, results=FALSE, echo=FALSE, warning=FALSE, message=FALSE}
 
-#Make plots in horizontal line with proper labeling of a and b
+#Make plots in vertical line with proper labeling of a and b
 
-#GrowthFigs<-plot_grid(GrowthTemp, GrowthpH, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 20, label_y=1, align="h");GrowthFigs
+GrowthFigs<-plot_grid(GrowthTemp, GrowthpH, labels = c("a", "b"), ncol=1, nrow=2, rel_heights= c(1,1), rel_widths = c(1,1), label_size = 15, label_y=1, align="h");GrowthFigs
 
-#ggsave(filename="Figures/20200611/GrowthFigs.png", plot=GrowthFigs, dpi=300, width=16, height=6, units="in")
+ggsave(filename="Figures/20200611/GrowthFigs.png", plot=GrowthFigs, dpi=400, width=6, height=8, units="in")
 
 ```
 
@@ -1037,10 +1037,49 @@ Combine both interaction plots at base and tip to be in horizontal line
 #Make plots of calcification at tip and base in horizontal line with proper labeling of a and b
 #removed legend on the tip, so they can share the same one. But now they are different sizes...
 
-#calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=2, nrow=1, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1, align="h");calcificationfig1
+calcificationfig1<-plot_grid(tipplot, baseplot, labels = c("a", "b"), ncol=1, nrow=2, rel_heights= c(1,1), rel_widths = c(0.8,1), label_size = 20, label_y=1.01, align="h");calcificationfig1
 
-#ggsave(filename="Figures/20200611/CalcificationFig1.png", plot=calcificationfig1, dpi=300, width=16, height=6, units="in")
+ggsave(filename="Figures/20200611/CalcificationFig1_2.png", plot=calcificationfig1, dpi=300, width=6, height=8, units="in")
 
+```
+
+#### iiib. Alternate Figure 4: Calcification Ratio bar plot at tips and bases
+```{r}
+
+calcificationBarPlot <-
+results %>% 
+  select("Temperature","pH","RatioSEM", "PartOfSpine") %>%
+  drop_na(RatioSEM) %>% 
+  dplyr::group_by(Temperature, pH, PartOfSpine) %>%
+  mutate(se = std.error(RatioSEM)) %>%
+  mutate(mean = (mean(RatioSEM))) %>%
+  
+  ggplot(aes(Temperature, mean, fill = pH)) +
+    geom_col(position = "dodge") +
+    facet_grid(cols = vars(PartOfSpine)) +
+    geom_errorbar(aes(ymin = mean-se, ymax = mean+se), 
+                      width = 0.4, position = position_dodge(.9)) +
+    scale_x_discrete(name="Temperature",
+                     labels = c("Ambient", "Heated")) +
+    scale_y_continuous(name="Calcification Ratio", 
+                       breaks = seq(0,3.5, by = .5),
+                       expand = expansion(mult = c(0, .1))) +
+    scale_fill_manual(name = NULL, 
+                      values = c("skyblue3", "gray40"),
+                      labels = c("Low pH", "Ambient pH"),
+                      guide = guide_legend(reverse = TRUE)) +
+    theme_bw() +
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.margin = margin(0), 
+          legend.position = c(.98,.98), 
+          legend.justification = c("right", "top"),
+          legend.background = element_blank()) +
+    geom_text(aes(x= 1, y = 1, label = "")) ; calcificationBarPlot
+  
+
+ggsave(filename="Figures/20200611/CalcPlotBar.png", plot=calcificationBarPlot, dpi=300, width=7, 
+       height=5, units="in")
 ```
 
 
@@ -1163,6 +1202,8 @@ droppedsummary<-results %>%
 
 #ggsave(filename="Figures/20200611/DroppedSpinesFig.png", plot=dropplot, dpi=300, width=8, height=6, units="in")
 ```
+
+
 
 ```{r}
 #library("effsize")
