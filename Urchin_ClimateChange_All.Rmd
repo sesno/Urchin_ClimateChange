@@ -438,13 +438,62 @@ Day  | Mean Urchin Diameter (mm) | se
 1    | 16.03                     | 0.36
 126  | 70.52                     | 1.43
 
-### b. Results of linear mixed model effect on diameter (day 1)
+### b. Results of ANOVA treatment effect on diameter (day 1)
 ```{r, message=FALSE, warning=FALSE}
-Day1Mod <- lmer(Diameter ~ Temperature*pH + (1|TankID), data=Day1Diameter)
-anova(Day1Mod, type = 2)
 
-Day1aov <- lmer(Diameter ~ Treatment + (1|TankID), data=Day1Diameter)
-anova(Day1aov, type = 2)
+summary(aov(Diameter ~ Treatment, data=InitialDiameter1))
+summary(aov(Diameter ~ Treatment, data=AcclimatedDiameter1))
+summary(aov(Diameter ~ Treatment, data=Day1Diameter1))
+summary(aov(Diameter ~ Treatment, data=Day126Diameter1))
+
+
+InitialDiameter1 <-
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    mutate(Diameter = ((Diam1+Diam2)/2)) %>% 
+    filter(Day == "-24") %>% 
+      #sizes on day 1  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+AcclimatedDiameter1 <-
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    mutate(Diameter = ((Diam1+Diam2)/2)) %>% 
+    filter(Day == "-13") %>% 
+      #sizes on day 1  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+Day1Diameter1 <-
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    mutate(Diameter = ((Diam1+Diam2)/2)) %>% 
+      #average the two diameter measurements
+    filter(Day == "1") %>% 
+      #sizes on day 1  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+Day126Diameter1 <-
+  results %>% 
+    select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
+    filter(TankID != "8t" ) %>% 
+      #remove urchin number 8 which died halfway through
+    drop_na(Diam1, Diam2) %>% 
+    mutate(Diameter = ((Diam1+Diam2)/2)) %>% 
+      #average the two diameter measurements
+    filter(Day == "126") %>% 
+      #sizes on day 1  
+    select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+
 ```
 
 Check assumptions of diameter model (Day 1)
