@@ -441,12 +441,9 @@ Day  | Mean Urchin Diameter (mm) | se
 ### b. Results of ANOVA treatment effect on diameter (day 1)
 ```{r, message=FALSE, warning=FALSE}
 
-summary(aov(Diameter ~ Treatment, data=InitialDiameter1))
-summary(aov(Diameter ~ Treatment, data=AcclimatedDiameter1))
-summary(aov(Diameter ~ Treatment, data=Day1Diameter1))
-summary(aov(Diameter ~ Treatment, data=Day126Diameter1))
+#Prep data for ANOVA diameter comparisons at InitialDiameter1 (day -24, collection), AcclimatedDiameter1 (day -13 after in ambient for ~2wks), InitialDiameter1 (day 1 of experiment, after another 2wks ramp up), and Day126Diameter1 (final diameters)
 
-
+#Initial Diameter (day -24)
 InitialDiameter1 <-
   results %>% 
     select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
@@ -458,6 +455,7 @@ InitialDiameter1 <-
       #sizes on day 1  
     select("TankID", "Diameter", "Temperature", "pH", "Treatment")
 
+#Acclimated (day -13)
 AcclimatedDiameter1 <-
   results %>% 
     select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
@@ -469,6 +467,7 @@ AcclimatedDiameter1 <-
       #sizes on day 1  
     select("TankID", "Diameter", "Temperature", "pH", "Treatment")
 
+#Day1
 Day1Diameter1 <-
   results %>% 
     select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
@@ -481,6 +480,7 @@ Day1Diameter1 <-
       #sizes on day 1  
     select("TankID", "Diameter", "Temperature", "pH", "Treatment")
 
+#Day126
 Day126Diameter1 <-
   results %>% 
     select("Day", "Diam1", "Diam2", "TankID", "Temperature", "pH", "Treatment") %>%
@@ -492,6 +492,12 @@ Day126Diameter1 <-
     filter(Day == "126") %>% 
       #sizes on day 1  
     select("TankID", "Diameter", "Temperature", "pH", "Treatment")
+
+##Calculate all ANOVAs
+summary(aov(Diameter ~ Treatment, data=InitialDiameter1))
+summary(aov(Diameter ~ Treatment, data=AcclimatedDiameter1))
+summary(aov(Diameter ~ Treatment, data=Day1Diameter1))
+summary(aov(Diameter ~ Treatment, data=Day126Diameter1))
 
 
 ```
